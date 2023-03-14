@@ -88,8 +88,83 @@ File I/O와 거의 같다.
 	. 소켓 끊기
 - 서버
 	. 소켓 생성
-	. 소켓 묶기
-	. 소켓 접속 대기
-	. 연결 소켓 생성
+	. 소켓 묶기(Bind)
+	. 소켓 접속 대기(Listen)
+	. 연결 소켓 생성(Accept)
 	. Data 송/수신
 	. 소켓 끊기
+
+
+표준 socket API
+너무 과거에 나온 표준이기 때문에 대용량 프로그래밍에 부적합.
+- socket(), connect(), accept(), send(), recv()
+
+윈도우 전용 socket API
+리눅스에서는 사용할 수 없음. Boost/Asio 사용.
+- WSASocket(), WSAConnect(), WSAAccept(), WSASend(), WSARecv()
+
+섞어서 사용해도 지금은 문제 없지만, 나중에 문제가 생김.
+
+
+- WSASocket
+	. af : address family
+	  - AF_INET만 사용
+	. type : 소켓의 타입
+	  - tcp를 위해 SOCK_STREAM사용	
+	. protocol : 사용할 프로토콜 종류
+	  - IPPROTO_TCP
+	. dwFlags : 소켓의 속성
+	  - 0 또는 WSA_PROTOCOL_OVERLAPPED
+- WSAConnect
+	. s : 소켓
+	. name : sockaddr 구조체의 주소
+	. namelen : 길이
+- sockaddr 구조체
+	. 네트워크 주소를 저장
+	  - IP 주소와 PORT 번호
+	. 빅 엔디안, 리틀 엔디안
+	  메모리는 1바이트 단위로 저장되지만, CPU는 여러 메모리를 한번에
+	  초기화할 수 있는 장치를 제공한다.
+	  intel 계열 CPU는 이를 거꾸로 저장한다. 1234 -> 4321
+	  컴퓨터 내부에서 사용할 때는 문제가 없지만, 
+	  네트워크를 통해 다른 컴퓨터로 전송할 때 문제가 생길 수 있다.
+	. inet_pton => pointer to network
+- WSARecv
+	. s : 소켓
+	. lpBuffers : 받는 데이터를 저장할 버퍼
+	. dwBufferCount : 버퍼의 개수
+	. lpFlags : 동작 옵션(MSG_PEEK, MSG_OOB(높은 우선순위))
+- WSABUF
+	. 흩어진 데이터를 관리하는 구조
+	. 성능 저하의 주범인 데이터 복사를 줄여줌
+	. gather/scatter I/O라고 불림
+	. 버퍼 여러 개를 한 번에 보내고 받기 위함
+
+	WSABUF buf[3]
+	WSASend(s, buf, 3)
+
+Port 묶기
+- 포트를 선점해서 다른 프로그램이 사용하지 못하도록 한다.
+- 원하는 프로그램에서 오는 접속만 받을 수 있다. (이는 게임서버에서는 큰 필요 없다.)
+- int bind
+	. s : 소켓
+	. name, namelen : 상대 소켓 주소, 주소 길이
+	  - INADDR_ANY로 전체 주소로부터의 접속을 허용
+
+Socket 접속 대기
+- 소켓이 접속을 받을 수 있도록 만든다
+- int listen
+	. s : 소켓
+	. backlog : 접속 대기 큐의 최대 연결 가능 숫자
+	  - 서버에 도착한 후 accept될 때 까지 기다리고 있는
+	    소켓연결의 최대 개수
+	  - 싱글 쓰레드 프로그램에서는 5정도가 적당
+	  - 대용량 서버는 20-200, 또는 SOMAXCONN
+	  - 최신 API는 안 쓰기도 함 (디폴트가 SOMAXCONN)
+
+연결 Socket 생성
+- 연결된 소켓을 만든다
+- WSAAccept
+	. s : listen을 하고 있는 소켓
+	. name, addrlen : 연결된 상태 소켓의 주소
+	. lpfnCondition : 연결 거절을 판단하는 함수 (보통 nullptr)
