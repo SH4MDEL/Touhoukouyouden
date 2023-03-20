@@ -22,6 +22,7 @@ using namespace std;
 #include <ws2tcpip.h> // 윈속2 확장 헤더
 #pragma comment(lib, "ws2_32.lib") // ws2_32.lib 링크
 
+#define NETWORK_DEBUG
 #define SHOW_CAPTIONFPS
 
 #define MAX_TITLE 64

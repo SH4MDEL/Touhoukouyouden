@@ -176,6 +176,10 @@ void InitServer()
     packet.size = sizeof(cs_packet_login);
     packet.type = CS_PACKET_LOGIN;
     Send(&packet);
+
+    while (!Recv()) {
+
+    }
 }
 
 void Send(void* packetBuf)
@@ -189,17 +193,18 @@ void Send(void* packetBuf)
     }
 }
 
-void Recv()
+bool Recv()
 {
     packet pk;
     int retval = recv(g_socket, reinterpret_cast<char*>(&pk), sizeof(packet), MSG_WAITALL);
 #ifdef NETWORK_DEBUG
     if (retval == SOCKET_ERROR) {
-        std::cout << "Socket Error in send" << std::endl;
-        return;
+        std::cout << "Socket Error in recv" << std::endl;
+        return false;
     }
 #endif // NETWORK_DEBUG
     if (retval != WSAEWOULDBLOCK) TranslatePacket(pk);
+    return true;
 }
 
 void TranslatePacket(const packet& packetBuf)
@@ -212,6 +217,9 @@ void TranslatePacket(const packet& packetBuf)
         sc_packet_login_confirm pk;
         retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, MSG_WAITALL);
         g_playerID = pk.id;
+#ifdef NETWORK_DEBUG
+        cout << "SC_PACKET_LOGIN_CONFIRM 수신" << endl;
+#endif
         break;
     }
     case SC_PACKET_OBJECT_INFO:
@@ -220,6 +228,9 @@ void TranslatePacket(const packet& packetBuf)
         retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, MSG_WAITALL);
         MainScene* scene = (MainScene*)g_framework.GetScene();
         scene->GetPlayer()->SetBoardPosition(pk.coord);
+#ifdef NETWORK_DEBUG
+        cout << "SC_PACKET_OBJECT_INFO 수신" << endl;
+#endif
         break;
     }
     }

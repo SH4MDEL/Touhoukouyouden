@@ -21,6 +21,8 @@ constexpr int MAX_PLAYER = 1;
 constexpr int MAP_HEIGHT = 8;
 constexpr int MAP_WIDTH = 8;
 
+#define NETWORK_DEBUG
+
 class GameServer;
 extern GameServer	g_gameServer;
 extern SOCKET		g_listenSock;

@@ -23,6 +23,8 @@ void MainScene::BuildObjects()
 
 	m_board->SetPiece(m_player);
 	m_player->SetBoard(m_board);
+
+	InitServer();
 }
 
 void MainScene::Update(float timeElapsed)
@@ -52,10 +54,8 @@ void MainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT messageID, WPARAM wP
 			packet.size = sizeof(cs_packet_move);
 			packet.type = CS_PACKET_MOVE;
 			packet.id = g_playerID;
-			POINT p;
-			p.x = Move::dx[VK_DOWN - wParam];
-			p.y = Move::dy[VK_DOWN - wParam];
-			packet.coord = p;
+			packet.coord.x = Move::dx[VK_DOWN - wParam];
+			packet.coord.y = Move::dy[VK_DOWN - wParam];
 			Send(&packet);
 			break;
 		}

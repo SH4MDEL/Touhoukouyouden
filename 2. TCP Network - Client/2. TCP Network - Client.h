@@ -4,5 +4,5 @@
 
 extern void InitServer();
 extern void	Send(void* packetBuf);
-extern void	Recv();
+extern bool	Recv();
 extern void	TranslatePacket(const packet& packetBuf);
