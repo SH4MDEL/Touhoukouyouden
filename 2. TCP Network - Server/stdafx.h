@@ -14,6 +14,13 @@
 #include <cmath>
 #include <chrono>
 #include <mutex>
+#include <unordered_map>
 using namespace std;
 
+constexpr int MAX_PLAYER = 1;
+constexpr int MAP_HEIGHT = 8;
+constexpr int MAP_WIDTH = 8;
+
+class GameServer;
+extern GameServer	g_gameServer;
 extern SOCKET		g_listenSock;

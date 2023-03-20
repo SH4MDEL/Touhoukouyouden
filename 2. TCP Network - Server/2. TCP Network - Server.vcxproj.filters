@@ -33,6 +33,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일\Framework</Filter>
     </ClCompile>
+    <ClCompile Include="server.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -42,6 +45,9 @@
       <Filter>헤더 파일\Framework</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="server.h">
       <Filter>헤더 파일\Framework</Filter>
     </ClInclude>
   </ItemGroup>
