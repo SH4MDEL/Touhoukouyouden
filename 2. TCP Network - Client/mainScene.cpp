@@ -16,10 +16,10 @@ void MainScene::OnDestroy()
 void MainScene::BuildObjects()
 {
 	m_board = make_shared<Board>(POINT{ m_windowSize.x / 2, m_windowSize.y / 2}, POINT{ m_windowSize.y, m_windowSize.y });
-	m_board->SetImage(L"Resource\\Chessboard.png");
+	m_board->SetImage(L"..\\Resource\\Chessboard.png");
 
 	m_player = make_shared<Piece>(POINT{ 0, 0 }, POINT{ m_windowSize.y / 8, m_windowSize.y / 8 });
-	m_player->SetImage(L"Resource\\Piece.png");
+	m_player->SetImage(L"..\\Resource\\Piece.png");
 
 	m_board->SetPiece(m_player);
 	m_player->SetBoard(m_board);
@@ -27,6 +27,7 @@ void MainScene::BuildObjects()
 
 void MainScene::Update(float timeElapsed)
 {
+	Recv();
 }
 
 void MainScene::Render(HDC hdc)
@@ -39,28 +40,23 @@ void MainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT messageID, WPARAM wP
 	switch (messageID)
 	{
 	case WM_KEYDOWN:
+		break;
 	case WM_KEYUP:
 		switch (wParam)
 		{
 		case VK_LEFT:
-			m_board->Move(m_player->GetBoardPosition(), {
-				m_player->GetBoardPosition().x + Move::dx[0],
-				m_player->GetBoardPosition().y + Move::dy[0] });
-			break;
-		case VK_RIGHT:
-			m_board->Move(m_player->GetBoardPosition(), {
-				m_player->GetBoardPosition().x + Move::dx[1],
-				m_player->GetBoardPosition().y + Move::dy[1] });
-			break;
 		case VK_UP:
-			m_board->Move(m_player->GetBoardPosition(), {
-				m_player->GetBoardPosition().x + Move::dx[2],
-				m_player->GetBoardPosition().y + Move::dy[2] });
-			break;
+		case VK_RIGHT:
 		case VK_DOWN:
-			m_board->Move(m_player->GetBoardPosition(), {
-				m_player->GetBoardPosition().x + Move::dx[3],
-				m_player->GetBoardPosition().y + Move::dy[3] });
+			cs_packet_move packet;
+			packet.size = sizeof(cs_packet_move);
+			packet.type = CS_PACKET_MOVE;
+			packet.id = g_playerID;
+			POINT p;
+			p.x = Move::dx[VK_DOWN - wParam];
+			p.y = Move::dy[VK_DOWN - wParam];
+			packet.coord = p;
+			Send(&packet);
 			break;
 		}
 
