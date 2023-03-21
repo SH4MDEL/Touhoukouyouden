@@ -1,0 +1,47 @@
+IOCP
+
+Windows I/O 모델 중 최고의 성능
+- 최근 RIO 출시 (10~20%정도 빠름)
+별도의 커널 객체를 통한 구현
+- IOCP 객체를 생성해서 핸들을 받아 사용.
+기본적으로 Overlapped I/O Callback
+- Callback 함수들을 멀티쓰레드로 동시에 실행
+IOCP 객체 내부 Thread Pool 사용
+- Thread 생성 파괴 오버헤드 없앰
+- 적은 수의 thread로 많은 연결을 관리
+IOCP 객체 내부 Device List 사용
+- 등록된 소켓에 대한 I/O는 IOCP가 처리
+- 등록되지 않은 소켓은 Normal하게 동작
+
+
+어려운 이유
+- Overlapped I/O로만 동작
+- 비 직관적인 API
+	. 하나의 API를 여러 용도로 사용
+	. 뜬금없는 API 파라미터
+
+IOCP - 준비
+- CreateIoCompletionPort (생성)
+	. FileHandle
+	  - INVALID_HANDLE_VALUE
+	. ExistingCompletionPort
+	  - nullptr
+	. CompletionKey
+	  - nullptr
+	. NumberOfConcurrentThreads
+	  - 0을 주면 코어 개수만큼 사용
+
+IOCP 객체와 소켓 연결
+- CreateIoCompletionPort (연결)
+	. FileHandle
+	  - socket
+	. ExistingCompletionPort
+	  - hIOCP
+	. CompletionKey
+	  - key : 들어온 소켓에 대해 unique한 key를 돌려주겠다.
+	. NumberOfConcurrentThreads
+	  - 0 : INVALID_HANDLE_VALUE가 아닐 시 무시된다.
+
+Worker Thread 생성
+	. thread{ WorkerThread }
+	. 그러나, IOCP는 쓰레드 없이도 동작 가능
