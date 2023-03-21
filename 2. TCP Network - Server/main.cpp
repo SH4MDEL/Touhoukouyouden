@@ -55,7 +55,7 @@ int Recv(SOCKET socket)
 
 void TranslatePacket(SOCKET socket, const packet& packetBuf)
 {
-	int retval, remain;
+	int retval;
 	switch (packetBuf.type)
 	{
 	case CS_PACKET_LOGIN:

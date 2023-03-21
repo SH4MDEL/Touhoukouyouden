@@ -46,10 +46,10 @@ void MainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT messageID, WPARAM wP
 	case WM_KEYUP:
 		switch (wParam)
 		{
-		case VK_LEFT:
-		case VK_UP:
-		case VK_RIGHT:
 		case VK_DOWN:
+		case VK_RIGHT:
+		case VK_UP:
+		case VK_LEFT:
 			cs_packet_move packet;
 			packet.size = sizeof(cs_packet_move);
 			packet.type = CS_PACKET_MOVE;
@@ -57,6 +57,9 @@ void MainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT messageID, WPARAM wP
 			packet.coord.x = Move::dx[VK_DOWN - wParam];
 			packet.coord.y = Move::dy[VK_DOWN - wParam];
 			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_PACKET_MOVE ¼Û½Å" << endl;
+#endif
 			break;
 		}
 

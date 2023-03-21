@@ -51,5 +51,6 @@ POINT GameServer::Move(INT id, POINT d)
 	}
 	m_map[from.y][from.x] = -1;
 	m_map[to.y][to.x] = id;
-	return to;
+	m_player[id] = to;
+	return m_player[id];
 }

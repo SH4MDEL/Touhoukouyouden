@@ -176,10 +176,9 @@ void InitServer()
     packet.size = sizeof(cs_packet_login);
     packet.type = CS_PACKET_LOGIN;
     Send(&packet);
-
-    while (!Recv()) {
-
-    }
+#ifdef NETWORK_DEBUG
+    cout << "CS_PACKET_LOGIN 송신" << endl;
+#endif
 }
 
 void Send(void* packetBuf)
@@ -196,26 +195,32 @@ void Send(void* packetBuf)
 bool Recv()
 {
     packet pk;
-    int retval = recv(g_socket, reinterpret_cast<char*>(&pk), sizeof(packet), MSG_WAITALL);
-#ifdef NETWORK_DEBUG
+    int retval = recv(g_socket, reinterpret_cast<char*>(&pk), sizeof(packet), 0);
     if (retval == SOCKET_ERROR) {
-        std::cout << "Socket Error in recv" << std::endl;
+        if (WSAGetLastError() == WSAEWOULDBLOCK) {
+
+        }
+#ifdef NETWORK_DEBUG
+        else {
+            std::cout << "Socket Error in recv" << std::endl;
+        }
         return false;
-    }
 #endif // NETWORK_DEBUG
-    if (retval != WSAEWOULDBLOCK) TranslatePacket(pk);
+    }
+    TranslatePacket(pk);
     return true;
 }
 
 void TranslatePacket(const packet& packetBuf)
 {
-    int retval, remain;
+
+    int retval;
     switch (packetBuf.type)
     {
     case SC_PACKET_LOGIN_CONFIRM:
     {
         sc_packet_login_confirm pk;
-        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, MSG_WAITALL);
+        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
         g_playerID = pk.id;
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_LOGIN_CONFIRM 수신" << endl;
@@ -225,9 +230,9 @@ void TranslatePacket(const packet& packetBuf)
     case SC_PACKET_OBJECT_INFO:
     {
         sc_packet_object_info pk;
-        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, MSG_WAITALL);
+        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
         MainScene* scene = (MainScene*)g_framework.GetScene();
-        scene->GetPlayer()->SetBoardPosition(pk.coord);
+        scene->GetBoard()->Move(scene->GetPlayer()->GetBoardPosition(), pk.coord);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_OBJECT_INFO 수신" << endl;
 #endif

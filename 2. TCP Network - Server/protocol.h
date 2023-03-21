@@ -19,29 +19,29 @@ struct packet
 	unsigned char type;
 };
 
-struct cs_packet_login : packet
+struct cs_packet_login : public packet
 {
 
 };
 
-struct cs_packet_move : packet
+struct cs_packet_move : public packet
 {
 	unsigned char id;
 	POINT coord;
 };
 
-struct cs_packet_logout : packet
+struct cs_packet_logout : public packet
 {
 	unsigned char id;
 };
 
 
-struct sc_packet_login_confirm : packet
+struct sc_packet_login_confirm : public packet
 {
 	unsigned char id;
 };
 
-struct sc_packet_object_info : packet
+struct sc_packet_object_info : public packet
 {
 	unsigned char id;
 	POINT coord;
