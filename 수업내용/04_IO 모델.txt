@@ -31,6 +31,7 @@
 - 단점 : Busy Waiting
 	. 모든 소켓의 recv를 돌아가면서 반복 호출해야 함.
 	. 많은 실패한 recv
+	  -> 잦은 System Call, CPU낭비, 성능 저하
 
 
 "Socket Thread"
@@ -44,6 +45,7 @@
 	. Coroutine API에서 오버헤드 전부 해결
 	  - Thread Pool을 사용하여 적은 개수의 Thread로 많은 개수의
 	    Coroutine 실행
+	. C++20의 coroutine은 초기 단계
 
 
 "Select"
@@ -52,6 +54,7 @@
 	. 효율적인 API 호출
 - 단점
 	. socket 개수의 한계 존재
+	  - unix: 64, linux: 1024
 	. socket 개수가 많아질수록 성능 저하 증가
 	  - linear search
 
