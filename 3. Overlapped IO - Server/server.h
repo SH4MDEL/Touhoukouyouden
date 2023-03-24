@@ -1,20 +1,28 @@
 #pragma once
 #include "stdafx.h"
+#include "session.h"
 
+class SESSION;
 class GameServer
 {
 public:
 	GameServer();
 	~GameServer() = default;
 
-	INT RegistPlayer();
-	POINT InputPlayer(INT id);
+	int RegistPlayer(int id);
+	POINT InputPlayer(int id);
 
-	POINT GetPlayerPosition(INT id);
-	POINT Move(INT id, POINT d);
+	POINT GetPlayerPosition(int id);
+	POINT Move(int id, POINT d);
+
+	SESSION& GetClient(unsigned long long id);
+	unordered_map<unsigned long long, SESSION>& GetClients();
+	void RegistClient(unsigned long long id, const SOCKET& socket);
+	void ResetClients();
 
 private:
-	INT							m_map[MAP_HEIGHT][MAP_WIDTH];
-	unordered_map<INT, POINT>	m_player;
+	int							m_map[MAP_HEIGHT][MAP_WIDTH];
+	unordered_map<unsigned long long, POINT>	m_player;
+	unordered_map<unsigned long long, SESSION>	m_clients;
 };
 

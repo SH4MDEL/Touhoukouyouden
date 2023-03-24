@@ -1,4 +1,5 @@
 #include "main.h"
+#include "main.h"
 
 int main()
 {
@@ -51,6 +52,10 @@ int Recv(SOCKET socket)
 		TranslatePacket(socket, pk);
 		return 1;
 	}
+}
+
+void TranslatePacket(unsigned long long sid, const packet& packetBuf)
+{
 }
 
 void TranslatePacket(SOCKET socket, const packet& packetBuf)
