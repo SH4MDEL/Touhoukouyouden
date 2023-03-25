@@ -18,12 +18,6 @@ void MainScene::BuildObjects()
 	m_board = make_shared<Board>(POINT{ m_windowSize.x / 2, m_windowSize.y / 2}, POINT{ m_windowSize.y, m_windowSize.y });
 	m_board->SetImage(L"..\\Resource\\Chessboard.png");
 
-	m_player = make_shared<Piece>(POINT{ 0, 0 }, POINT{ m_windowSize.y / 8, m_windowSize.y / 8 });
-	m_player->SetImage(L"..\\Resource\\Piece.png");
-
-	m_board->SetPiece(m_player);
-	m_player->SetBoard(m_board);
-
 	InitServer();
 }
 
@@ -35,6 +29,24 @@ void MainScene::Update(float timeElapsed)
 void MainScene::Render(HDC hdc)
 {
 	m_board->Render(hdc);
+}
+
+void MainScene::AddPlayer(int id, POINT position)
+{
+	auto player = make_shared<Piece>(position, POINT{ m_windowSize.y / 8, m_windowSize.y / 8 });
+	player->SetImage(L"..\\Resource\\Piece.png");
+	player->SetBoard(m_board);
+	m_board->SetPlayer(id, player);
+
+	m_players.insert({ id, player });
+}
+
+void MainScene::ExitPlayer(int id)
+{
+	if (m_players.find(id) != m_players.end()) {
+		m_players.erase(id);
+	}
+	m_board->ExitPlayer(id);
 }
 
 void MainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT messageID, WPARAM wParam, LPARAM lParam)

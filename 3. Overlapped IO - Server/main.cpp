@@ -11,6 +11,22 @@ void CALLBACK RecvCallback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED recv_over
 	packet* pk = reinterpret_cast<packet*>(g_gameServer.GetClient(sid).m_recvBuf);
 	TranslatePacket(sid, pk);
 
+	if (!num_bytes) {
+		g_gameServer.ExitPlayer(sid);
+		g_gameServer.ExitClient(sid);
+		for (auto& client : g_gameServer.GetClients()) {
+			sc_packet_exit_player* pk = reinterpret_cast<sc_packet_exit_player*>(g_gameServer.GetClient(client.first).m_recvBuf);
+			(*pk).size = sizeof(sc_packet_exit_player);
+			(*pk).type = SC_PACKET_EXIT_PLAYER;
+			(*pk).id = sid;
+#ifdef NETWORK_DEBUG
+			cout << "SC_PACKET_EXIT_PLAYER 송신 - ID : " << client.first << endl;
+#endif
+			client.second.DoSend(client.first, (*pk).size, g_gameServer.GetClient(client.first).m_recvBuf);
+		}
+		return;
+	}
+
 	g_gameServer.GetClient(sid).DoRecv();
 }
 
@@ -50,10 +66,25 @@ void TranslatePacket(unsigned long long sid, packet* packetBuf)
 	{
 	case CS_PACKET_LOGIN:
 	{
+		// 새로 플레이어 들어옴
 		cs_packet_login* pk = reinterpret_cast<cs_packet_login*>(packetBuf);
 #ifdef NETWORK_DEBUG
 		cout << "CS_PACKET_LOGIN 수신" << endl;
 #endif
+		// 여태까지 모든 플레이어 정보 들어온 플레이어한테 보냄.
+		for (const auto& player : g_gameServer.GetPlayers()) {
+			sc_packet_add_player* sendpk = reinterpret_cast<sc_packet_add_player*>(g_gameServer.GetClient(sid).m_recvBuf);
+			(*sendpk).size = sizeof(sc_packet_add_player);
+			(*sendpk).type = SC_PACKET_ADD_PLAYER;
+			(*sendpk).id = (char)player.first;
+			(*sendpk).coord = player.second;
+			g_gameServer.GetClient(sid).DoSend(sid, (*sendpk).size, g_gameServer.GetClient(sid).m_recvBuf);
+#ifdef NETWORK_DEBUG
+			cout << "SC_PACKET_ADD_PLAYER 송신" << endl;
+#endif
+		}
+
+		// 새로 들어온 플레이어 정보 추가
 		sc_packet_login_confirm* sendpk = reinterpret_cast<sc_packet_login_confirm*>(g_gameServer.GetClient(sid).m_recvBuf);
 		(*sendpk).id = g_gameServer.RegistPlayer(sid);
 		if ((*sendpk).id != -1) {
@@ -63,6 +94,19 @@ void TranslatePacket(unsigned long long sid, packet* packetBuf)
 #ifdef NETWORK_DEBUG
 			cout << "SC_PACKET_LOGIN_CONFIRM 송신" << endl;
 #endif
+
+			// 새로 들어온 플레이어의 정보를 모든 플레이어에게 보냄.
+			for (const auto& client : g_gameServer.GetClients()) {
+				sc_packet_add_player* sendpk = reinterpret_cast<sc_packet_add_player*>(g_gameServer.GetClient(sid).m_recvBuf);
+				(*sendpk).size = sizeof(sc_packet_add_player);
+				(*sendpk).type = SC_PACKET_ADD_PLAYER;
+				(*sendpk).id = sid;
+				(*sendpk).coord = g_gameServer.GetPlayer(sid);
+				g_gameServer.GetClient(client.first).DoSend(client.first, (*sendpk).size, g_gameServer.GetClient(sid).m_recvBuf);
+#ifdef NETWORK_DEBUG
+				cout << "SC_PACKET_ADD_PLAYER 송신" << endl;
+#endif
+			}
 		}
 		break;
 	}
@@ -73,14 +117,17 @@ void TranslatePacket(unsigned long long sid, packet* packetBuf)
 		cout << "CS_PACKET_MOVE 수신" << endl;
 #endif
 		sc_packet_object_info* sendpk = reinterpret_cast<sc_packet_object_info*>(g_gameServer.GetClient(sid).m_recvBuf);
-		(*sendpk).coord = g_gameServer.Move((*pk).id, (*pk).coord);
 		(*sendpk).size = sizeof(sc_packet_object_info);
 		(*sendpk).type = SC_PACKET_OBJECT_INFO;
+		(*sendpk).id = (*pk).id;
+		(*sendpk).coord = g_gameServer.Move((*pk).id, (*pk).coord);
+
+		// 업데이트된 플레이어의 정보를 모든 플레이어에게 보냄
 		for (auto& client : g_gameServer.GetClients()) {
 #ifdef NETWORK_DEBUG
 			cout << "SC_PACKET_OBJECT_INFO 송신 - ID : " << client.first << endl;
 #endif
-			client.second.DoSend(sid, (*sendpk).size, g_gameServer.GetClient(sid).m_recvBuf);
+			client.second.DoSend(client.first, (*sendpk).size, g_gameServer.GetClient(sid).m_recvBuf);
 		}
 		break;
 	}

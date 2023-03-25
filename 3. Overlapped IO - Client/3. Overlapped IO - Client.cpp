@@ -227,14 +227,37 @@ void TranslatePacket(const packet& packetBuf)
 #endif
         break;
     }
+    case SC_PACKET_ADD_PLAYER:
+    {
+        sc_packet_add_player pk;
+        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
+        MainScene* scene = (MainScene*)g_framework.GetScene();
+        scene->AddPlayer(pk.id, pk.coord);
+#ifdef NETWORK_DEBUG
+        cout << "SC_PACKET_ADD_PLAYER 수신" << endl;
+#endif
+        break;
+    }
     case SC_PACKET_OBJECT_INFO:
     {
         sc_packet_object_info pk;
         retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
         MainScene* scene = (MainScene*)g_framework.GetScene();
-        scene->GetBoard()->Move(scene->GetPlayer()->GetBoardPosition(), pk.coord);
+        cout << pk.id << endl;
+        scene->GetBoard()->Move(pk.id, pk.coord);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_OBJECT_INFO 수신" << endl;
+#endif
+        break;
+    }
+    case SC_PACKET_EXIT_PLAYER:
+    {
+        sc_packet_exit_player pk;
+        retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
+        MainScene* scene = (MainScene*)g_framework.GetScene();
+        scene->ExitPlayer(pk.id);
+#ifdef NETWORK_DEBUG
+        cout << "SC_PACKET_EXIT_PLAYER 수신" << endl;
 #endif
         break;
     }

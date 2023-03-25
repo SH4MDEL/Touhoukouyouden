@@ -14,13 +14,22 @@ int GameServer::RegistPlayer(int id)
 	return -1;
 }
 
+void GameServer::ExitPlayer(int id)
+{
+	if (m_player.find(id) != m_player.end()) {
+		m_map[m_player[id].x][m_player[id].y] = -1;
+		m_player.erase(id);
+	}
+}
+
 POINT GameServer::InputPlayer(int id)
 {
-	for (int i = 0; i < MAP_HEIGHT; ++i) {
-		for (int j = 0; j < MAP_WIDTH; ++j) {
+	for (int i = 0; i < MAP_WIDTH; ++i) {
+		for (int j = 0; j < MAP_HEIGHT; ++j) {
 			if (m_map[i][j] == -1) {
 				m_map[i][j] = id;
 				return POINT{ i, j };
+				cout << i << ", " << j << endl;
 			}
 		}
 	}
@@ -44,13 +53,23 @@ POINT GameServer::Move(int id, POINT d)
 	if (to.x >= 8 || to.x < 0 || to.y >= 8 || to.y < 0) {
 		return from;
 	}
-	if (m_map[to.y][to.x] != -1) {
+	if (m_map[to.x][to.y] != -1) {
 		return from;
 	}
-	m_map[from.y][from.x] = -1;
-	m_map[to.y][to.x] = id;
+	m_map[from.x][from.y] = -1;
+	m_map[to.x][to.y] = id;
 	m_player[id] = to;
 	return m_player[id];
+}
+
+POINT GameServer::GetPlayer(int id)
+{
+	return m_player[id];
+}
+
+unordered_map<unsigned long long, POINT>& GameServer::GetPlayers()
+{
+	return m_player;
 }
 
 SESSION& GameServer::GetClient(unsigned long long id)
@@ -67,6 +86,13 @@ void GameServer::RegistClient(unsigned long long id, const SOCKET& socket)
 {
 	m_clients.try_emplace(id, id, socket);
 	m_clients[id].DoRecv();
+}
+
+void GameServer::ExitClient(int id)
+{
+	if (m_clients.find(id) != m_clients.end()) {
+		m_clients.erase(id);
+	}
 }
 
 void GameServer::ResetClients()

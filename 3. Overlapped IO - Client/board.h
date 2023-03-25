@@ -13,10 +13,12 @@ public:
 
 	void Render(HDC hdc) override;
 	void Move(POINT from, POINT to);
+	void Move(int id, POINT to);
 
-	void SetPiece(shared_ptr<Piece> piece) { m_pieces.push_back(piece); }
+	void SetPlayer(int id, shared_ptr<Piece> piece) { m_players.insert({id, piece}); }
+	void ExitPlayer(int id);
 
 private:
-	vector<shared_ptr<Piece>>	m_pieces;
+	unordered_map<int, shared_ptr<Piece>> m_players;
 };
 

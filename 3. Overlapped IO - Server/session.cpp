@@ -22,7 +22,7 @@ void SESSION::DoRecv()
 	DWORD recv_flag = 0;
 	ZeroMemory(&m_recvOver, sizeof(m_recvOver));
 	m_recvOver.hEvent = reinterpret_cast<HANDLE>(m_id);
-	WSARecv(m_socket, &m_recvWsabuf, 1, 0, &recv_flag, &m_recvOver, RecvCallback);
+	int retval = WSARecv(m_socket, &m_recvWsabuf, 1, 0, &recv_flag, &m_recvOver, RecvCallback);
 }
 
 void SESSION::DoSend(unsigned long long senderID, int numBytes, const char* buff)
