@@ -45,3 +45,50 @@ IOCP 객체와 소켓 연결
 Worker Thread 생성
 	. thread{ WorkerThread }
 	. 그러나, IOCP는 쓰레드 없이도 동작 가능
+
+IOCP - 완료 검사
+- GetQueuedCompletionStatus
+	. CompletionPort
+	  - IOCP 객체
+	. dwMilliseconds
+	  - 얼마나 기다릴지
+
+함수가 2개임.
+2개로 많은 일을 하려고 하다 보니 난해함.
+
+
+이벤트 추가함수
+- PostQueuedCompletionStatus
+	AI, NPC 등에서 사용한다. 지금은 사용 X
+	Network IO와는 아무 관계 없다.
+
+
+IOCP 사용을 위해 소켓을 Device List에 등록해야 한다. (CreateIoCompletionPort 사용)
+대기하고 있는 쓰레드 중 하나를 깨워서 등록한다. (GetQueuedCompletionStatus)
+
+IOCP 서버 설계
+1. 초기화
+	- IOCP 핸들 생성 (서버용 소켓 따로 만들어야 함)
+2. Listen 소켓 IOCP에 등록 후 AcceptEx 호출
+3. 서버 메인 루프
+	- GQCS 호출
+	  . 
+
+AcceptEx: Overlapped I/O로 등록해야 한다.
+GQCS: Send, Recv, AcceptEx 확인 모두 처리해야 한다.
+즉 Accept 처리는 비동기로 해야 한다.
+GQCS를 통한 완료 처리를 해야 한다.
+완료 처리는?
+- 새 클라이언트가 접속했으면 클라이언트 객체를 만든다.
+- IOCP에 소켓을 등록한다.
+
+Overlapped 구조체
+- SESSION에 넣어서 관리한다.
+
+Send
+Windows는 Send를 실행한 순서대로 내부 버퍼에 넣어놓고 전송한다.
+내부 버퍼가 차서 Send가 중간에 잘렸다면?
+- 나머지를 다시 보내면 된다.
+- 다시 보내기 전 다른 Send가 끼어들었다면?
+	. 이런 일이 벌어진 소켓을 끊어버린다.
+	. 이런 일은 잘 벌어지지 않는다. 메모리가 부족한 경우 등
