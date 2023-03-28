@@ -1,5 +1,4 @@
-#pragma once
-#pragma pack(push, 1)
+#pragma 
 
 #include <windows.h>
 
@@ -17,6 +16,7 @@ constexpr char		SC_PACKET_EXIT_PLAYER = 4;
 
 #define NETWORK_DEBUG
 
+#pragma pack(push, 1)
 struct packet
 {
 	unsigned char size;
@@ -64,3 +64,4 @@ struct sc_packet_exit_player : public packet
 {
 	unsigned char id;
 };
+#pragma pack(pop)

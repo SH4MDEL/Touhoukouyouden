@@ -50,7 +50,7 @@ POINT GameServer::Move(int id, POINT d)
 	POINT to;
 	to.x = from.x + d.x;
 	to.y = from.y + d.y;
-	if (to.x >= 8 || to.x < 0 || to.y >= 8 || to.y < 0) {
+	if (to.x >= MAP_WIDTH || to.x < 0 || to.y >= MAP_HEIGHT || to.y < 0) {
 		return from;
 	}
 	if (m_map[to.x][to.y] != -1) {

@@ -84,7 +84,7 @@ void TranslatePacket(unsigned long long sid, packet* packetBuf)
 #endif
 		}
 
-		// 새로 들어온 플레이어 정보 추가
+		// 새로 들어온 플레이어 정보 서버에 추가
 		sc_packet_login_confirm* sendpk = reinterpret_cast<sc_packet_login_confirm*>(g_gameServer.GetClient(sid).m_recvBuf);
 		(*sendpk).id = g_gameServer.RegistPlayer(sid);
 		if ((*sendpk).id != -1) {
@@ -96,6 +96,7 @@ void TranslatePacket(unsigned long long sid, packet* packetBuf)
 #endif
 
 			// 새로 들어온 플레이어의 정보를 모든 플레이어에게 보냄.
+			// (새로 들어온 플레이어 포함)
 			for (const auto& client : g_gameServer.GetClients()) {
 				sc_packet_add_player* sendpk = reinterpret_cast<sc_packet_add_player*>(g_gameServer.GetClient(sid).m_recvBuf);
 				(*sendpk).size = sizeof(sc_packet_add_player);

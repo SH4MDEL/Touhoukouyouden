@@ -17,6 +17,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Overlapped N-1 Chatting Cli
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Overlapped N-1 Chatting Server", "Overlapped N-1 Chatting Server\Overlapped N-1 Chatting Server.vcxproj", "{C59501BD-6F28-4B88-8CCF-ADB00888654C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Single Thread IOCP Server", "Single Thread IOCP Server\Single Thread IOCP Server.vcxproj", "{9350D320-5914-49C5-B45A-BF3E3B2973B0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Single Thread IOCP Client", "Single Thread IOCP Client\Single Thread IOCP Client.vcxproj", "{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -81,6 +85,22 @@ Global
 		{C59501BD-6F28-4B88-8CCF-ADB00888654C}.Release|x64.Build.0 = Release|x64
 		{C59501BD-6F28-4B88-8CCF-ADB00888654C}.Release|x86.ActiveCfg = Release|Win32
 		{C59501BD-6F28-4B88-8CCF-ADB00888654C}.Release|x86.Build.0 = Release|Win32
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Debug|x64.ActiveCfg = Debug|x64
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Debug|x64.Build.0 = Debug|x64
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Debug|x86.ActiveCfg = Debug|Win32
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Debug|x86.Build.0 = Debug|Win32
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Release|x64.ActiveCfg = Release|x64
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Release|x64.Build.0 = Release|x64
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Release|x86.ActiveCfg = Release|Win32
+		{9350D320-5914-49C5-B45A-BF3E3B2973B0}.Release|x86.Build.0 = Release|Win32
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Debug|x64.ActiveCfg = Debug|x64
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Debug|x64.Build.0 = Debug|x64
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Debug|x86.ActiveCfg = Debug|Win32
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Debug|x86.Build.0 = Debug|Win32
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Release|x64.ActiveCfg = Release|x64
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Release|x64.Build.0 = Release|x64
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Release|x86.ActiveCfg = Release|Win32
+		{6E1F276E-933A-4AB3-AD4B-D0A83AC1EEF5}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
