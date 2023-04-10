@@ -1,0 +1,28 @@
+IOCP
+
+시작
+- Worker Thread 작성
+	. thread::hardware_concurrency()
+	. 논리 코어의 개수가 아닌 실제 코어의 개수를 사용한다.
+	. 실제 코어보다 살짝 높은 값을 사용한다. 이는 벤치마크를 해보며 판단한다.
+
+문제점
+- thread는 별도의 함수이므로 많은 변수를 전역변수로 이전해야 한다.
+
+
+unordered_map
+엄청난 Data Race
+
+concurrent_unordered_map
+- 여러 쓰레드가 동시에 Insert해도 문제가 발생하지 않는다.
+- Erase가 안된다 -> Client를 *Client로 변경 필요
+- 다른 쓰레드에서 사용중인 CLIENT를 delete하면? 
+
+concurrent_unordered_map<int, atomic_shared_ptr<CLIENT>>
+
+atomic_shared_ptr을 쓰면 여러 쓰레드에서 한 포인터에 접근해도 문제 x?
+
+
+DATA RACE
+- 정책
+	. mutex로 보호한다.

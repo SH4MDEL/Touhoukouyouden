@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Single Thread IOCP Client",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Multithread", "Multithread\Multithread.vcxproj", "{786D9B08-D453-41A1-AB60-5C1F083E4F36}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Multithread IOCP Server", "Multithread IOCP Server\Multithread IOCP Server.vcxproj", "{8194843F-F223-4A61-BF5D-023846FAC28D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -111,6 +113,14 @@ Global
 		{786D9B08-D453-41A1-AB60-5C1F083E4F36}.Release|x64.Build.0 = Release|x64
 		{786D9B08-D453-41A1-AB60-5C1F083E4F36}.Release|x86.ActiveCfg = Release|Win32
 		{786D9B08-D453-41A1-AB60-5C1F083E4F36}.Release|x86.Build.0 = Release|Win32
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Debug|x64.ActiveCfg = Debug|x64
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Debug|x64.Build.0 = Debug|x64
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Debug|x86.ActiveCfg = Debug|Win32
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Debug|x86.Build.0 = Debug|Win32
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Release|x64.ActiveCfg = Release|x64
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Release|x64.Build.0 = Release|x64
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Release|x86.ActiveCfg = Release|Win32
+		{8194843F-F223-4A61-BF5D-023846FAC28D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
