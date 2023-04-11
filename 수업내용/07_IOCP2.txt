@@ -26,3 +26,21 @@ atomic_shared_ptr을 쓰면 여러 쓰레드에서 한 포인터에 접근해도 문제 x?
 DATA RACE
 - 정책
 	. mutex로 보호한다.
+	. atomic operation을 사용한다.
+	. m_x, m_y는 보호하지 않는다.
+
+재사용 문제
+- m_socket이 DATA RACE가 된다.
+	. clients 재사용 시
+- 해결책
+	. 값이 valid한지를 나타내는 변수가 필요하다.
+	  - m_state 변수 추가 필요. (m_inuse 통합)
+	. m_state의 의미
+	  - ST_FREE: 미사용
+	  - ST_ALLOC: ACCEPT됨. 아직 cs_login 패킷을 받지 못함. 
+
+문제점
+- 멀티쓰레드 버그
+	. x, y 좌표
+- 최적화 필요
+	. 너무 잦은 lock

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <thread>
+#include <mutex>
+#include <array>
 #include <WS2tcpip.h>
 #include <MSWSock.h>		// AcceptEx 사용을 위함.
 #include "protocol.h"
@@ -11,6 +13,7 @@ using namespace std;
 constexpr int MAX_USER = 10;
 
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };		// 뭐가 완료 되었는지 확인
+enum SESSION_STATE { ST_FREE, ST_ALLOC, ST_INGAME };
 
 HANDLE g_iocp;
 SOCKET g_server;
@@ -47,6 +50,8 @@ class SESSION {
 public:
 	// bool in_use;			// hashmap을 사용할 것이므로 필요 없음.
 	int _id;
+	SESSION_STATE m_state;
+	mutex m_clientLock;
 	SOCKET _socket;
 	short	x, y;
 	char	_name[NAME_SIZE];
@@ -55,8 +60,7 @@ public:
 public:
 	SESSION()
 	{
-		cout << "error" << endl;
-		exit(-1);
+		reset(0);
 	}
 	SESSION(int id, SOCKET socket) : _id(id), _socket(socket), x(0), y(0), _prev_remain(0)/*, in_use(false)*/
 	{
@@ -67,6 +71,14 @@ public:
 	}
 
 	~SESSION() { closesocket(_socket); }
+
+	void reset(SOCKET s)
+	{
+		_socket = s;
+		x = y = 0;
+		_prev_remain = 0;
+		_name[0] = 0;
+	}
 
 	void do_recv()
 	{
@@ -97,7 +109,10 @@ public:
 	void send_move_packet(size_t c_id);
 };
 
-unordered_map<size_t, SESSION> clients;
+//unordered_map<size_t, SESSION> clients;
+// thread safe하지 않다.
+array<SESSION, MAX_USER> clients;
+// 
 
 void SESSION::send_move_packet(size_t c_id)
 {
@@ -112,15 +127,25 @@ void SESSION::send_move_packet(size_t c_id)
 
 int get_new_client_id()
 {
-	for (int i = 0; i < MAX_USER; ++i)
-		if (!clients.count(i)) return i;
+	for (int i = 0; i < MAX_USER; ++i) {
+		clients[i].m_clientLock.lock();
+		if (clients[i].m_state == ST_FREE) {
+			clients[i].m_state = ST_ALLOC;
+			// 상태의 전환을 atomic하게 수행해야 한다.
+			// 밖에서 바꾸면 그 사이 state가 어떻게 바뀔지 모른다.
+			clients[i].m_clientLock.unlock();
+			return i;
+		};
+		clients[i].m_clientLock.unlock();
+	}
 	return -1;
 }
 
 void process_packet(int c_id, char* packet)
 {
 	switch (packet[1]) {
-	case CS_LOGIN: {
+	case CS_LOGIN: 
+	{
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 		strcpy_s(clients[c_id]._name, p->name);
 		clients[c_id].send_login_info_packet();
@@ -128,32 +153,48 @@ void process_packet(int c_id, char* packet)
 		SC_ADD_PLAYER_PACKET add_packet;
 		add_packet.id = c_id;
 		strcpy_s(add_packet.name, p->name);
+		clients[c_id].x = clients[c_id].y = 0;
+
+		clients[c_id].m_clientLock.lock();
+		if (clients[c_id].m_state == ST_ALLOC) {
+			clients[c_id].m_state = ST_INGAME;
+		}
+		else {
+			cout << "ERROR" << endl;
+		}
+		clients[c_id].m_clientLock.unlock();
+		// state의 변경은 DATA RACE
+
 		add_packet.size = sizeof(add_packet);
 		add_packet.type = SC_ADD_PLAYER;
 		add_packet.x = clients[c_id].x;
 		add_packet.y = clients[c_id].y;
 
 		for (auto& pl : clients) {
+			if (pl.m_state != ST_INGAME) continue;
+			if (pl._id == c_id) continue;
 			// c_id : 새로 접속한 플레이어의 id
-			if (pl.second._id == c_id) continue;
-			pl.second.do_send(&add_packet);
+			pl.do_send(&add_packet);
 		}
 
 
 		for (auto& pl : clients) {
-			if (pl.second._id == c_id) continue;
+			if (pl.m_state != ST_INGAME) continue;
+			if (pl._id == c_id) continue;
+
 			SC_ADD_PLAYER_PACKET add_packet;
-			add_packet.id = pl.second._id;
-			strcpy_s(add_packet.name, pl.second._name);
+			add_packet.id = pl._id;
+			strcpy_s(add_packet.name, pl._name);
 			add_packet.size = sizeof(add_packet);
 			add_packet.type = SC_ADD_PLAYER;
-			add_packet.x = pl.second.x;
-			add_packet.y = pl.second.y;
+			add_packet.x = pl.x;
+			add_packet.y = pl.y;
 			clients[c_id].do_send(&add_packet);
 		}
 		break;
 	}
-	case CS_MOVE: {
+	case CS_MOVE: 
+	{
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
 		short x = clients[c_id].x;
 		short y = clients[c_id].y;
@@ -166,7 +207,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].x = x;
 		clients[c_id].y = y;
 		for (auto& pl : clients)
-			pl.second.send_move_packet(c_id);
+			pl.send_move_packet(c_id);
 		break;
 	}
 	}
@@ -174,15 +215,40 @@ void process_packet(int c_id, char* packet)
 
 void disconnect(int c_id)
 {
+	clients[c_id].m_clientLock.lock();
+	if (clients[c_id].m_state == ST_FREE) {
+		clients[c_id].m_clientLock.unlock();
+		return;
+	}
+	// 다른 쓰레드가 이미 처리했다.
+	if (clients[c_id].m_state != ST_INGAME) {
+		cout << "Invalid Session State\n";
+		exit(-1);
+	}
+	// ST_ALLOC이면 뭔가 문제가 있다.
+
+	// clients[c_id].m_state = ST_FREE;
+	// clients[c_id].m_clientLock.unlock();
+	// 재사용으로 인한 오동작 우려가 있다.
+
 	for (auto& pl : clients) {
-		if (pl.second._id == c_id) continue;
+		if (pl.m_state != ST_INGAME) continue;
+		if (pl._id == c_id) continue;
 		SC_REMOVE_PLAYER_PACKET p;
 		p.id = c_id;
 		p.size = sizeof(p);
 		p.type = SC_REMOVE_PLAYER;
-		pl.second.do_send(&p);
+		pl.do_send(&p);
+		// 여기서 다시 lock을 할 경우 
+		// 
 	}
-	clients.erase(c_id);
+
+	closesocket(clients[c_id]._socket);
+	clients[c_id].m_state = ST_FREE;
+	clients[c_id].m_clientLock.unlock();
+	// lock을 꽤나 오래 하고 있지만 disconnect는 
+	// 가끔 일어나는 이벤트이므로 용인할 만 하다.
+	// 재사용을 하지 않는 것이 나은 이유
 }
 
 void WorkerThread()
@@ -212,7 +278,8 @@ void WorkerThread()
 			SOCKET c_socket = ex_over->c_socket;
 			int client_id = get_new_client_id();
 			if (client_id != -1) {
-				clients.try_emplace(client_id, client_id, c_socket);
+				//clients.try_emplace(client_id, client_id, c_socket);
+				clients[client_id].reset(c_socket);
 				CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket),
 					g_iocp, client_id, 0);
 				clients[client_id].do_recv();
