@@ -21,6 +21,8 @@ void out_th(int threadid, int num_thread)
 {
 	for (int i = 0; i < 50000000 / num_thread; ++i) {
 		t_sum[threadid].sum += 2;
+		// sum = sum + 2; // atomic하지 않다.
+		// sum += 2 // atomic하다
 	}
 }
 

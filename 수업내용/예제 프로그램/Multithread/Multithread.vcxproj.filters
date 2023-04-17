@@ -24,5 +24,11 @@
     <ClCompile Include="peterson.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="memory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="atomic peterson.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
