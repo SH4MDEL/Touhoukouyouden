@@ -30,6 +30,7 @@ IOCP - 준비
 	  - nullptr
 	. NumberOfConcurrentThreads
 	  - 0을 주면 코어 개수만큼 사용
+리턴값으로 핸들(IOCP 객체) 반환
 
 IOCP 객체와 소켓 연결
 - CreateIoCompletionPort (연결)
@@ -48,10 +49,13 @@ Worker Thread 생성
 
 IOCP - 완료 검사
 - GetQueuedCompletionStatus
-	. CompletionPort
-	  - IOCP 객체
-	. dwMilliseconds
-	  - 얼마나 기다릴지
+	. CompletionPort : IOCP 객체
+	. lpNumberofByte : 전송된 데이터 양
+	. lpCompletionkey : 미리 정해놓은 ID
+	. lpOverlapped : Overlapped I/O 구조체
+	. dwMilliseconds : 얼마나 기다릴지
+- thread를 IOCP의 thread-pool에 등록하고 멈춤
+- IOCP로부터 I/O 결과를 얻어옴
 
 함수가 2개임.
 2개로 많은 일을 하려고 하다 보니 난해함.
@@ -66,29 +70,109 @@ IOCP - 완료 검사
 IOCP 사용을 위해 소켓을 Device List에 등록해야 한다. (CreateIoCompletionPort 사용)
 대기하고 있는 쓰레드 중 하나를 깨워서 등록한다. (GetQueuedCompletionStatus)
 
-IOCP 서버 설계
+IOCP 서버 설계 (싱글 쓰레드 버전)
 1. 초기화
 	- IOCP 핸들 생성 (서버용 소켓 따로 만들어야 함)
 2. Listen 소켓 IOCP에 등록 후 AcceptEx 호출
 3. 서버 메인 루프
-	- GQCS 호출
-	  . 
+	- GetQueuedCompletionStatus 호출
+	  . AcceptEx가 완료되면 새 소켓을 IOCP에 연결 후
+	    WSARecv 호출, 다시 AcceptEx 호출
+	  . WSARecv가 완료되면 패킷 처리, 다시 WSARecv 호출
+	  . WSASend가 완료되면 메모리 반환(자료구조 정리)
+accept는 블로킹이다. Overlapped 버전의 acceptEx를 사용해야 한다.
 
 AcceptEx: Overlapped I/O로 등록해야 한다.
-GQCS: Send, Recv, AcceptEx 확인 모두 처리해야 한다.
+GetQueuedCompletionStatus : Send, Recv, AcceptEx 확인 모두 처리해야 한다.
 즉 Accept 처리는 비동기로 해야 한다.
-GQCS를 통한 완료 처리를 해야 한다.
+
+GetQueuedCompletionStatus를 통한 완료 처리를 해야 한다.
+- AcceptEx 함수를 사용해서 비동기로 처리한다.
+- Listen Socket을 IOCP에 등록 후, AcceptEx를 호출한다.
+
 완료 처리는?
+무한 루프를 돌면서
 - 새 클라이언트가 접속했으면 클라이언트 객체를 만든다.
 - IOCP에 소켓을 등록한다.
+	. Send/Recv가 IOCP를 통해 수행된다.
+- WSARecv()를 호출한다.
+	. Overlapped I/O Recv 상태를 항상 유지해야 한다.
+- AcceptEx()를 다시 호출한다.
+
+
+클라이언트 객체 (SESSION 객체)
+- 서버는 클라이언트의 정보를 갖고 있는 객체가 필요하다.
+	. 최대 동접과 같은 개수가 필요하다.
+	. 필요한 정보: ID, 네트워크 접속 성보, 상태, 게임정보(name, hp, x, y) 등
+- GetQueuedCompletionStatus를 받았을 때
+  클라이언트 객체를 찾을 수 있어야 한다.
+	. IOCP에서 오고 가는 것은 completion_key와
+	  overlapped I/O pointer, number of byte 뿐..
+	. Completion_key를 클라이언트 객체의 포인터로 하거나
+	  클라이언트 객체의 ID 혹은 index로 한다.
 
 Overlapped 구조체
+- 모든 Send, Recv에 Overlapped 구조체가 필요하다.
+- 하나의 구조체를 동시에 여러 호출에서 사용하는 것은 불가하다.
+- 소켓당 Recv 호출은 무조건 한 개여야 한다.
+	. Recv 호출 용 Overlapped 구조체 한 개가 있어서 계속
+	  재사용하는 것이 바람직하다 (new/delete overhead 제거)
+- 소켓당 Send 호출은 동시에 여러 개가 될 수 있다.
+	. Send 버퍼도 같은 개수가 필요하다.
+	. 개수의 제한이 없으므로 new/delete를 사용한다.
+	  - send 할 때 new, send가 complete되었을 때 delete
+	. 성능을 위해서는 공유 Pool을 만들어서 관리할 필요가 있다.
 - SESSION에 넣어서 관리한다.
 
+
+Overlapped I/O Pointer를 확장
+- Overlapped I/O 구조체 자체에는 쓸만한 정보가 없다.
+- 따라서 정보들을 더 추가할 필요가 있다.
+	. 뒤에 추가하면 IOCP는 있는지 없는지도 모르고
+	  에러도 나지 않는다. (pointer만 왔다 갔다 하므로)
+- 꼭 필요한 정보
+	. 지금 이 I/O가 send인지 recv인지
+	. I/O buffer의 위치 (send할 때 버퍼도 같이 생성되므로)
+
+IOCP가 완료됐다. GetQueuedCompletionStatus 함수에서 주는 정보만으로
+처리를 해야 하는데, 무슨 정보가 오냐. key랑 바이트 수가 온다.
+key로 어떤 소켓이 I/O를 했는지 알 수는 있지만 뭐가 완료 된 것인지 알 수 없다.
+Send인지 Recv인지 알 수 없다. 따라서 그 정보를 추가로 전달해야 한다.
+따라서 Overlapped 구조체에 정보를 덧붙여서 전달해야한다.
+
+
+완료 처리
+- GetQueuedCompletionStatus를 부른다.
+	. 에러처리/접속종료처리를 한다.
+	. Send/Recv/Accept처리를 한다.
+	  - 확장 Overlapped I/O 구조체를 유용하게 사용한다.
+	  - Recv
+	    . 패킷이 다 왔다 검사 후 다 왔으면 패킷 처리
+	    . 여러 개의 패킷이 한번에 왔을 때 처리
+	    . 계속 Recv 호출
+	  - Send
+	    . Overlapped 구조체, 버퍼의 free(혹은 재사용)
+	  - Accept
+	    . 새 클라이언트 객체 등록
+
+Send/Recv/Accept인지, 접속 종료인지 에러인지는 확장 Overlapped 구조체를 통해
+알아내야 한다.
+
+버퍼 관리
+Recv
+- 하나의 소켓에 대해 Recv 호출은 언제나 하나이기 때문에
+  하나의 버퍼를 계속 사용할 수 있다.
+- 패킷이 중간에 잘려진 채로 도착할 수 있다.
+	. 모아 두었다가 다음에 온 데이터와 붙여주어야 한다.
+	. 남은 데이터를 저장해 두는 버퍼가 필요하다.
+	  또는 ring buffer를 사용할 수도 있다.
+- 패킷이 여러 개 한꺼번에 도착할 수 있다.
+	. 잘라서 처리해야 한다.
+
 Send
-Windows는 Send를 실행한 순서대로 내부 버퍼에 넣어놓고 전송한다.
-내부 버퍼가 차서 Send가 중간에 잘렸다면?
-- 나머지를 다시 보내면 된다.
-- 다시 보내기 전 다른 Send가 끼어들었다면?
-	. 이런 일이 벌어진 소켓을 끊어버린다.
-	. 이런 일은 잘 벌어지지 않는다. 메모리가 부족한 경우 등
+- Windows는 Send를 실행한 순서대로 내부 버퍼에 넣어놓고 전송한다.
+- 내부 버퍼가 차서 Send가 중간에 잘렸다면?
+	. 나머지를 다시 보내면 된다.
+	. 다시 보내기 전 다른 Send가 끼어들었다면?
+	  - 이런 일이 벌어진 소켓을 끊어버린다.
+	  - 이런 일은 잘 벌어지지 않는다. 메모리가 부족한 경우 등

@@ -5,7 +5,7 @@
 - IPv4/IPv6
 
 인터넷은 4개의 레이어로 구현된다.
-6개짜리는 아무짝에도 쓸모 없다.
+6개짜리는 아무짝에도 쓸모 없다. (안쓴다)
 - Application
 	. 우리가 작성하는 프로그램, 게임 클라이언트, 게임 서버
 - Transport
@@ -25,7 +25,7 @@
 - 인터넷 표준에서의 패킷
 	. 레이어에서 다루는 데이터의 단위
 	  - 레이어마다 한번에 다룰 수 있는 데이터의 최대 크기가 있음.
-	. 각 레이어에서 필요한 정보가 추라됨(헤어)
+	. 각 레이어에서 필요한 정보가 추라됨(헤더)
 	. 패킷은 독립적이어야 함. 
 	  앞/뒤의 데이터를 보지 않아도 전달할 곳을 알 수 있어야 함.
 - Application에서의 패킷
@@ -60,6 +60,10 @@ MMO 패킷의 특징
 - Structure Format
 	. C의 구조체를 정의해서 공유
 	. 관리가 쉬움, 언어/운영체제/컴파일러에 구애받는다.
+- SDK 사용
+	. 프로토콜의 정의와 해석을 도와주는 유틸리티
+	. OpenSource : Protocol Buffer, Flat Buffer
+	. 웹에서는 XML이나 Javascript도 많이 사용
 
 패킷 재조립
 - 인터넷 표준에서의 패킷 ≠ Application에서의 패킷
@@ -110,7 +114,8 @@ File I/O와 거의 같다.
 	. af : address family
 	  - AF_INET만 사용
 	. type : 소켓의 타입
-	  - tcp를 위해 SOCK_STREAM사용	
+	  - tcp를 위해 SOCK_STREAM사용
+	  - (udp는 SCOK_DGRAM)
 	. protocol : 사용할 프로토콜 종류
 	  - IPPROTO_TCP
 	. dwFlags : 소켓의 속성
@@ -134,6 +139,7 @@ File I/O와 거의 같다.
 	. lpBuffers : 받는 데이터를 저장할 버퍼
 	. dwBufferCount : 버퍼의 개수
 	. lpFlags : 동작 옵션(MSG_PEEK, MSG_OOB(높은 우선순위))
+	. IpNumberofBytesRecvd : 받은 데이터의 크기
 - WSABUF
 	. 흩어진 데이터를 관리하는 구조
 	. 성능 저하의 주범인 데이터 복사를 줄여줌
@@ -145,7 +151,7 @@ File I/O와 거의 같다.
 
 Port 묶기
 - 포트를 선점해서 다른 프로그램이 사용하지 못하도록 한다.
-- 원하는 프로그램에서 오는 접속만 받을 수 있다. (이는 게임서버에서는 큰 필요 없다.)
+- 원하는 프로그램에서 오는 접속만 받을 수도 있다. (이는 게임서버에서는 큰 필요 없다.)
 - int bind
 	. s : 소켓
 	. name, namelen : 상대 소켓 주소, 주소 길이
@@ -168,3 +174,12 @@ Socket 접속 대기
 	. s : listen을 하고 있는 소켓
 	. name, addrlen : 연결된 상태 소켓의 주소
 	. lpfnCondition : 연결 거절을 판단하는 함수 (보통 nullptr)
+	. dwCallbackData : IpfnCondition에 들어갈 값
+	. return : 데이터 전송용 소켓
+
+IPv6
+. 현재 사용하고 있는 IPv4는 네트워크 주소가 모자람
+. IPv6가 새로운 표준
+. 옛날 기계와 옛날 소프트웨어는 IPv4만 인식
+. IPv4와 다른 프로토콜을 사용하기 때문에 서로 통신 안 됨
+	- 소켓 프로그래밍 API는 같음, 프로토콜만 다름
