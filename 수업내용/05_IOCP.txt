@@ -158,6 +158,32 @@ Send인지 Recv인지 알 수 없다. 따라서 그 정보를 추가로 전달해야 한다.
 Send/Recv/Accept인지, 접속 종료인지 에러인지는 확장 Overlapped 구조체를 통해
 알아내야 한다.
 
+class OVER_EXP
+	WSAOVERLAPPED _over
+	- Overlapped 구조체이다.
+	WSABUF _wsabuf
+	- 이 버퍼가 IOCP 버퍼를 가리키게 하면 된다
+	  Overlapped I/O하는동안 살아 있어야 한다.
+	char m_netbuf[BUF_SIZE];
+	- IOCP send/recv 시 사용할 버퍼
+	COMP_TYPE _comp_type;
+	- 어떤 용도로 사용되었는가를 기록하는 enum 타입이다.
+	  OP_ACCEPT, OP_RECV, OP_SEND 등..
+
+class SESSION
+	OVER_EXP _recv_over;
+	- 확장 Overlapped 구조체이다.
+	int		_prev_remain;
+	- 지난 번 처리 후 남은 패킷 조각의 크기
+	int		_last_move_time;
+	mutex _s_lock;
+	SOCKET _socket;
+	S_STATE _state;
+	int _id;
+	short	x, y;
+	char	_name[NAME_SIZE];
+
+
 버퍼 관리
 Recv
 - 하나의 소켓에 대해 Recv 호출은 언제나 하나이기 때문에
@@ -169,10 +195,55 @@ Recv
 - 패킷이 여러 개 한꺼번에 도착할 수 있다.
 	. 잘라서 처리해야 한다.
 
+구현
+unsigned char* packet_start = exover->m_netbuf;
+// 확장 Overlapped 구조체의 netbuf 주소를 저장한다.
+int remain_data = client->m_prev_recv + num_byte;
+// num_byte는 GQCS에서 넘어온 받은 데이터 크기가 들어있다.
+// 
+int packet_size = packet_start[0];
+// 패킷의 맨 앞에는 패킷의 크기가 담겨 있다.
+while (packet_size <= remain_data) {
+	PacketProcess(packet_start, key);
+	packet_start += packet_size;
+	remain_data -= packet_size;
+	if (0 == remain_data) break;
+	packet_size = packet_start[0];
+}
+client->m_prev_recv = remain_data;
+if (0 != remain_data)
+memcpy(exover->m_netbuf, packet_start, remain_data);
+
+
 Send
+- Send는 여러 thread에서 동시다발적으로 발생한다.
+- Send하는 Overlapped 구조체와 buffer는 send가 끝날 때 까지 유지되어야 한다.
+	. 개수를 미리 알 수 없으므로 dynamic하게 관리해야 한다.
 - Windows는 Send를 실행한 순서대로 내부 버퍼에 넣어놓고 전송한다.
 - 내부 버퍼가 차서 Send가 중간에 잘렸다면?
 	. 나머지를 다시 보내면 된다.
 	. 다시 보내기 전 다른 Send가 끼어들었다면?
 	  - 이런 일이 벌어진 소켓을 끊어버린다.
 	  - 이런 일은 잘 벌어지지 않는다. 메모리가 부족한 경우 등
+
+Send 완료시
+- Overlapped 구조체와 Buffer를 해제 시켜야 한다.
+	. 메모리 재사용
+	. 모든 자료구조를 확장 Overlapped 구조체에 넣었으므로
+	  if (dwIoSize < pOverEx->m_IOCPbuf[0]) Disconnect(client);
+	  delete pOverlappedEx;
+
+
+비동기 Accept
+- 메인루프는 GetQueuedCompletionStatus로 대기해야 하므로 동기식
+  Accept는 처리할 수 없다.
+	. Accept도 처리해야 하고 GQCS도 처리해야 하는 상황이 된다.
+- Accept 또한 IOCP로 수신해야 한다.
+	. AcceptEx가 필요하다.
+
+기존 accept는 동기식이다. 클라이언트 접속시까지 기다렸다가, 접속되면 소켓
+return하는 accept였는데, GQCS의 accept는 비동기식 accept이다.
+대기는 GQCS로 실시하고, 여기서 accept, recv, send 전부 대기한다.
+Overlapped I/O 실습은 동기식인데, 그게 가능한 이유는 send, recv 완료가
+콜백을 통해 이루어져서 메인 루프에서 딱히 대기할 게 없기 때문이다.
+그런데 IOCP는 GQCS로 대기해야 한다.
