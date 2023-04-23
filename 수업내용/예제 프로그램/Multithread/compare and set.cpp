@@ -43,7 +43,6 @@ void out_th(int threadid, int num_thread)
 
 int main()
 {
-	//register int sum = 0;
 	for (int num_thread = 1; num_thread <= MAX_THREAD; num_thread *= 2) {
 		sum = 0;
 		vector<thread> workers;
@@ -58,8 +57,4 @@ int main()
 
 		cout << "thread num : " << num_thread << ", sum : " << sum << ", " << exec_ms << "ms" << endl;
 	}
-	//int num_core = thread::hardware_concurrency();
-	//// 논리 프로세서의 개수를 받아온다.
-
-
 }

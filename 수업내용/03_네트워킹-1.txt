@@ -11,10 +11,10 @@
 - Transport
 	. Application에 데이터를 전달해 주는 API
 	. TCP, UDP
-- Network
+- Network (Internet)
 	. 주소를 보고, 컴퓨터(목적지)까지 안내해 주는 시스템
 	. IPv4, IPv6
-- Data Link
+- Data Link (Network Access)
 	. 컴퓨터와 컴퓨터를 연결하는 물리적인 규격
 	. Ethernet, PPP, FDDI, LTE/5G, WIFI
 각각의 레이어마다 헤더를 붙여 데이터의 정보를 확인하게 한다.
@@ -25,7 +25,7 @@
 - 인터넷 표준에서의 패킷
 	. 레이어에서 다루는 데이터의 단위
 	  - 레이어마다 한번에 다룰 수 있는 데이터의 최대 크기가 있음.
-	. 각 레이어에서 필요한 정보가 추라됨(헤더)
+	. 각 레이어에서 필요한 정보가 추가됨(헤더)
 	. 패킷은 독립적이어야 함. 
 	  앞/뒤의 데이터를 보지 않아도 전달할 곳을 알 수 있어야 함.
 - Application에서의 패킷
@@ -86,17 +86,17 @@ File I/O와 거의 같다.
 
 네트워크 프로그래밍 단계
 - 클라이언트
-	. 소켓 생성
-	. 서버 소켓 연결
-	. Data 송/수신
-	. 소켓 끊기
+	. 소켓 생성 (createsocket)
+	. 서버 소켓 연결 (connect)
+	. Data 송/수신 (send, recv)
+	. 소켓 끊기 (closesocket)
 - 서버
-	. 소켓 생성
+	. 소켓 생성 (createsocket)
 	. 소켓 묶기(Bind)
 	. 소켓 접속 대기(Listen)
 	. 연결 소켓 생성(Accept)
-	. Data 송/수신
-	. 소켓 끊기
+	. Data 송/수신 (send, recv)
+	. 소켓 끊기 (closesocket)
 
 
 표준 socket API

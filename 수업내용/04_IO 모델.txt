@@ -212,7 +212,7 @@ WSAGetOverlappedResult()
 	. lpdwFlags : Recv의 lpFlag의 결과
 
 1. WSACreateEvent()를 사용해서 이벤트 생성
-2. WSAOERLAPPED 구조체 변수 선언, 0으로 초기화(ZeroMemory)
+2. WSAOVERLAPPED 구조체 변수 선언, 0으로 초기화(ZeroMemory)
    hEvent에 1의 이벤트
 3. WSASend(), WSARecv()
 	. 2의 구조체를 WSAOVERLAPPED에 등록(중복 사용 불가능, 호출 완료 후 재사용)
