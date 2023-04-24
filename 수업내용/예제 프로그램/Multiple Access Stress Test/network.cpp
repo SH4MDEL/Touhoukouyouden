@@ -138,9 +138,8 @@ void ProcessPacket(int ci, unsigned char packet[])
 			if (ci == my_id) {
 				if (0 != move_packet->move_time) {
 					auto d_ms = duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count() - move_packet->move_time;
-
-					if (global_delay < d_ms) global_delay++;
-					else if (global_delay > d_ms) global_delay--;
+					//if (global_delay < d_ms) global_delay++;
+					//else if (global_delay > d_ms) global_delay--;
 				}
 			}
 		}
