@@ -198,21 +198,37 @@ Recv
 구현
 unsigned char* packet_start = exover->m_netbuf;
 // 확장 Overlapped 구조체의 netbuf 주소를 저장한다.
+
 int remain_data = client->m_prev_recv + num_byte;
 // num_byte는 GQCS에서 넘어온 받은 데이터 크기가 들어있다.
-// 
+// 이전에 받고 남은 데이터 크기와 이번에 받은 데이터를 더한다.
+
 int packet_size = packet_start[0];
 // 패킷의 맨 앞에는 패킷의 크기가 담겨 있다.
+
 while (packet_size <= remain_data) {
+// 이전에 받고 남은 데이터 크기와 이번에 받은 데이터의 합이
+// 완전한 패킷의 총 크기보다 클 경우 작동
+
 	PacketProcess(packet_start, key);
+	// 데이터가 날아 왔을 때 해당 패킷을 처리하는 패킷 처리 루틴이다.
 	packet_start += packet_size;
+	// 패킷의 크기만큼 시작 위치를 더한다.
 	remain_data -= packet_size;
+	// 남은 데이터는 시작 위치만큼 뺀다.
 	if (0 == remain_data) break;
+	// 다 읽었을 경우 탈출
 	packet_size = packet_start[0];
+	// 한 번에 패킷 두 개 이상이 들어왔을 경우
+	// 다음 루프를 돌아야 한다.
 }
 client->m_prev_recv = remain_data;
+// 패킷 사이즈가 남은 데이터보다 커서 (완전한 패킷을 구성할 수 없어서)
+// 루프를 탈출했다. 이 때 남은 데이터의 크기를 저장해 둔다.
+
 if (0 != remain_data)
-memcpy(exover->m_netbuf, packet_start, remain_data);
+	memcpy(exover->m_netbuf, packet_start, remain_data);
+// 남은 데이터가 있을 경우 넷버퍼에 저장해 둔다.
 
 
 Send
