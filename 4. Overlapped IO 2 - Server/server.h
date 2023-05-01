@@ -9,24 +9,23 @@ public:
 	GameServer();
 	~GameServer() = default;
 
-	int RegistPlayer(int id);
-	void ExitPlayer(int id);
-	POINT InputPlayer(int id);
+	int RegistPlayer(UINT id);
+	void ExitPlayer(UINT id);
+	POINT InputPlayer(UINT id);
 
-	POINT GetPlayerPosition(int id);
-	POINT Move(int id, POINT d);
-	POINT GetPlayer(int id);
-	unordered_map<unsigned long long, POINT>& GetPlayers();
+	POINT GetPlayerPosition(UINT id);
+	POINT Move(UINT id, POINT d);
+	POINT GetPlayer(UINT id);
+	unordered_map<UINT, POINT>& GetPlayers();
 
-	SESSION& GetClient(unsigned long long id);
-	unordered_map<unsigned long long, SESSION>& GetClients();
-	void RegistClient(unsigned long long id, const SOCKET& socket);
-	void ExitClient(int id);
+	SESSION& GetClient(UINT id);
+	unordered_map<UINT, SESSION>& GetClients();
+	void RegistClient(UINT id, const SOCKET& socket);
+	void ExitClient(UINT id);
 	void ResetClients();
 
 private:
-	int							m_map[MAP_WIDTH][MAP_HEIGHT];
-	unordered_map<unsigned long long, POINT>	m_player;
-	unordered_map<unsigned long long, SESSION>	m_clients;
+	unordered_map<UINT, POINT>	m_player;
+	unordered_map<UINT, SESSION>	m_clients;
 };
 

@@ -39,7 +39,7 @@ int main()
 			if (event.type == sf::Event::Closed) {
 				g_window->close();
 			}
-			if (event.type == sf::Event::KeyReleased) {
+			if (event.type == sf::Event::KeyPressed) {
 				g_gameFramework.OnProcessingKeyboardMessage(event);
 			}
 		}

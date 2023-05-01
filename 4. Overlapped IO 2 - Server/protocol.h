@@ -5,6 +5,9 @@
 constexpr short		SERVER_PORT = 4000;
 constexpr int		BUFSIZE = 256;
 
+constexpr int		MAP_HEIGHT = 400;
+constexpr int		MAP_WIDTH = 400;
+
 constexpr char		CS_PACKET_LOGIN = 1;
 constexpr char		CS_PACKET_MOVE = 2;
 constexpr char		CS_PACKET_LOGOUT = 100;

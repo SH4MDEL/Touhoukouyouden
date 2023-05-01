@@ -45,7 +45,7 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 		for (int j = 0; j < SCREEN_HEIGHT; ++j) {
 			int tileX = i + g_leftX;
 			int tileY = j + g_topY;
-			if (tileX < 0 || tileY < 0) continue;
+			if (tileX < 0 || tileX > MAP_WIDTH || tileY < 0 || tileY > MAP_HEIGHT) continue;
 			if (0 == (tileX / 3 + tileY / 3) % 2) {
 				m_whiteTile->SetPosition({ TILE_WIDTH * i, TILE_WIDTH * j });
 				m_whiteTile->Render(window);
@@ -60,12 +60,13 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 	if (m_avatar) m_avatar->Render(window);
 	for (auto& player : m_players) player.second->Render(window);
 	
-	//sf::Text text;
-	//text.setFont(g_font);
-	//char buf[100];
-	////sprintf_s(buf, "(%d, %d)", m_avatar.m_x, avatar.m_y);
-	//text.setString(buf);
-	//g_window->draw(text);
+	sf::Text text;
+	text.setFont(g_font);
+	char buf[100];
+	sprintf_s(buf, "(%d, %d)", m_avatar->GetPosition().x, m_avatar->GetPosition().y);
+	text.setFillColor(sf::Color::Black);
+	text.setString(buf);
+	g_window->draw(text);
 }
 
 void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)

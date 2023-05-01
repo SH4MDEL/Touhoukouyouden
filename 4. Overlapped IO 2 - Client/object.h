@@ -15,6 +15,8 @@ public:
 	virtual void SetLength(POINT length) { m_length = length; }
 	virtual void SetTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, INT dx, INT dy);
 
+	POINT GetPosition();
+
 protected:
 	POINT					m_position;
 	POINT					m_length;

@@ -20,3 +20,8 @@ void Object::SetTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, IN
 	m_sprite.setTexture(*(texture.get()));
 	m_sprite.setTextureRect(sf::IntRect(x, y, dx, dy));
 }
+
+POINT Object::GetPosition()
+{
+	return m_position;
+}
