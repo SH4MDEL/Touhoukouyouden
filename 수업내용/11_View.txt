@@ -26,3 +26,16 @@ Standalone 게임과 무엇이 다른가
 
 이동 시 시야처리 순서
 
+
+시야 리스트(ViewList)
+- 클라이언트에서 보여주고 있는 객체의 리스트
+
+view list 최적화
+- mutex를 이용한 상호배제는 심한 성능 제한
+- 이동 시 상대방의 view list를 조작하지 않는다.
+- 대신 상대방에게 접근/이동/이탈을 메시지로 보낸다.
+- 상대방은 메시지를 받아서 자신의 view list를 업데이트
+- mutex가 필요 없어진다.
+- non-blocking concurrent queue가 필요
+
+섹터 분할

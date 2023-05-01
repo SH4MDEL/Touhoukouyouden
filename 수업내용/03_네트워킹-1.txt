@@ -121,6 +121,7 @@ File I/O와 거의 같다.
 	. dwFlags : 소켓의 속성
 	  - 0 또는 WSA_PROTOCOL_OVERLAPPED
 - WSAConnect
+  대기하고 있는 상대방 소켓에 자신의 소켓을 연결
 	. s : 소켓
 	. name : sockaddr 구조체의 주소
 	. namelen : 길이
