@@ -54,10 +54,6 @@ int Recv(SOCKET socket)
 	}
 }
 
-void TranslatePacket(unsigned long long sid, const packet& packetBuf)
-{
-}
-
 void TranslatePacket(SOCKET socket, const packet& packetBuf)
 {
 	int retval;

@@ -26,7 +26,7 @@ using namespace std;
 #define SHOW_CAPTIONFPS
 
 #define MAX_TITLE 64
-#define TITLESTRING TEXT("1. Game Client")
+#define TITLESTRING TEXT("3. Overlapped I/O")
 
 #define MAX_FPS 1.0 / 60.0
 

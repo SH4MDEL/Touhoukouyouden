@@ -243,7 +243,6 @@ void TranslatePacket(const packet& packetBuf)
         sc_packet_object_info pk;
         retval = recv(g_socket, reinterpret_cast<char*>(&pk) + 2, packetBuf.size - 2, 0);
         MainScene* scene = (MainScene*)g_framework.GetScene();
-        cout << pk.id << endl;
         scene->GetBoard()->Move(pk.id, pk.coord);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_OBJECT_INFO 수신" << endl;

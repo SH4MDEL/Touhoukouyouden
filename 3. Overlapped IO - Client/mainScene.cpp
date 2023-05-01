@@ -8,17 +8,17 @@ void MainScene::OnCreate()
 {
 }
 
-void MainScene::OnDestroy()
-{
-
-}
-
 void MainScene::BuildObjects()
 {
-	m_board = make_shared<Board>(POINT{ m_windowSize.x / 2, m_windowSize.y / 2}, POINT{ m_windowSize.y, m_windowSize.y });
+	m_board = make_shared<Board>(POINT{ m_windowSize.x / 2, m_windowSize.y / 2 }, POINT{ m_windowSize.y, m_windowSize.y });
 	m_board->SetImage(L"..\\Resource\\Chessboard.png");
 
 	InitServer();
+}
+
+void MainScene::OnDestroy()
+{
+
 }
 
 void MainScene::Update(float timeElapsed)

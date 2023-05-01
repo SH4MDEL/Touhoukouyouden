@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3. Overlapped IO - Client",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3. Overlapped IO - Server", "3. Overlapped IO - Server\3. Overlapped IO - Server.vcxproj", "{2E0CDFC5-8E67-40B6-9CA9-2BB7E1B87C8A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "4. Overlapped IO 2 - Server", "4. Overlapped IO 2 - Server\4. Overlapped IO 2 - Server.vcxproj", "{E9696A87-17A0-42D4-9F5A-D84B847AA041}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "4. Overlapped IO 2 - Client", "4. Overlapped IO 2 - Client\4. Overlapped IO 2 - Client.vcxproj", "{BF8145E9-F0C9-4A9F-A339-847FA58B686C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -61,6 +65,22 @@ Global
 		{2E0CDFC5-8E67-40B6-9CA9-2BB7E1B87C8A}.Release|x64.Build.0 = Release|x64
 		{2E0CDFC5-8E67-40B6-9CA9-2BB7E1B87C8A}.Release|x86.ActiveCfg = Release|Win32
 		{2E0CDFC5-8E67-40B6-9CA9-2BB7E1B87C8A}.Release|x86.Build.0 = Release|Win32
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Debug|x64.ActiveCfg = Debug|x64
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Debug|x64.Build.0 = Debug|x64
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Debug|x86.ActiveCfg = Debug|Win32
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Debug|x86.Build.0 = Debug|Win32
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Release|x64.ActiveCfg = Release|x64
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Release|x64.Build.0 = Release|x64
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Release|x86.ActiveCfg = Release|Win32
+		{E9696A87-17A0-42D4-9F5A-D84B847AA041}.Release|x86.Build.0 = Release|Win32
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Debug|x64.ActiveCfg = Debug|x64
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Debug|x64.Build.0 = Debug|x64
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Debug|x86.ActiveCfg = Debug|Win32
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Debug|x86.Build.0 = Debug|Win32
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Release|x64.ActiveCfg = Release|x64
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Release|x64.Build.0 = Release|x64
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Release|x86.ActiveCfg = Release|Win32
+		{BF8145E9-F0C9-4A9F-A339-847FA58B686C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
