@@ -230,6 +230,9 @@ int main()
 				CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket),
 					h_iocp, client_id, 0);
 				clients[client_id].do_recv();
+
+				cout << "플레이어 연결 성공. ID : " << client_id << endl;
+
 			}
 			else {
 				cout << "Max user exceeded.\n";
