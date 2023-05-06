@@ -13,29 +13,29 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="헤더 파일\Framework">
-      <UniqueIdentifier>{845b9c30-2796-4051-9f4a-0beabfeb03eb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\Object">
-      <UniqueIdentifier>{8e03f5ba-1ddf-4566-b32b-e566650b4f47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\Scene">
-      <UniqueIdentifier>{6b357c76-b7a9-4da5-9576-984b7fc4d696}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\Singleton">
-      <UniqueIdentifier>{5b8ffe1f-a7f4-4717-98e3-6652905eadc1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="소스 파일\Framework">
-      <UniqueIdentifier>{feb2b44e-c735-46ea-9d12-8fce2b1adb5e}</UniqueIdentifier>
+      <UniqueIdentifier>{b1a74626-5aa6-48f4-b065-27c8332e0f93}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\Object">
-      <UniqueIdentifier>{a9dbbab2-12f8-46da-9977-a519439572e9}</UniqueIdentifier>
+      <UniqueIdentifier>{d2244fc9-8a2b-4e45-90b1-3a97134b9e02}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\Scene">
-      <UniqueIdentifier>{1446a2fd-4693-4f33-aa1c-150258efd282}</UniqueIdentifier>
+      <UniqueIdentifier>{6a7346a9-7be5-42ea-9a39-56c18ee8f584}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\Singleton">
-      <UniqueIdentifier>{93ffd1f1-0698-4317-b78c-c46cc4c4c5a0}</UniqueIdentifier>
+      <UniqueIdentifier>{7866379a-51df-4d9f-ae99-4445269e5ece}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Framework">
+      <UniqueIdentifier>{6e83582e-f8d5-490d-8991-fe608559084a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Singleton">
+      <UniqueIdentifier>{d28c864a-3629-45ed-ab83-9572478b82c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Scene">
+      <UniqueIdentifier>{cc87f259-efe3-4b4f-99c9-18f2ecb97f9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Object">
+      <UniqueIdentifier>{204bdcb0-8173-4a89-89c3-49ace729ec47}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +80,9 @@
     <ClInclude Include="object.h">
       <Filter>헤더 파일\Object</Filter>
     </ClInclude>
+    <ClInclude Include="piece.h">
+      <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
     <ClInclude Include="scene.h">
       <Filter>헤더 파일\Scene</Filter>
     </ClInclude>
@@ -91,9 +94,6 @@
     </ClInclude>
     <ClInclude Include="timer.h">
       <Filter>헤더 파일\Singleton</Filter>
-    </ClInclude>
-    <ClInclude Include="piece.h">
-      <Filter>헤더 파일\Object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
