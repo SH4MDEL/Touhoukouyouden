@@ -36,7 +36,7 @@ struct cs_packet_login : public packet
 struct cs_packet_move : public packet
 {
 	unsigned char id;
-	POINT coord;
+	unsigned char direction;
 };
 
 struct cs_packet_logout : public packet

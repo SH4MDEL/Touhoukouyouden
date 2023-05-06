@@ -28,12 +28,12 @@ POINT GameServer::GetPlayerPosition(UINT id)
 	return POINT{ -1, -1 };
 }
 
-POINT GameServer::Move(UINT id, POINT d)
+POINT GameServer::Move(UINT id, UCHAR direction)
 {
 	POINT from = GetPlayerPosition(id);
-	POINT to;
-	to.x = from.x + d.x;
-	to.y = from.y + d.y;
+	auto dx = Move::dx[direction];
+	auto dy = Move::dy[direction];
+	POINT to = { from.x + (SHORT)dx , from.y + (SHORT)dy };
 	if (to.x > MAP_WIDTH || to.x < 0 || to.y > MAP_HEIGHT || to.y < 0) {
 		return from;
 	}

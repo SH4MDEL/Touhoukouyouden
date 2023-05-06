@@ -185,7 +185,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		sendpk.size = sizeof(sc_packet_object_info);
 		sendpk.type = SC_PACKET_OBJECT_INFO;
 		sendpk.id = (*pk).id;
-		sendpk.coord = g_gameServer.Move((*pk).id, (*pk).coord);
+		sendpk.coord = g_gameServer.Move((*pk).id, (*pk).direction);
 
 		// 업데이트된 플레이어의 정보를 모든 플레이어에게 보냄
 		for (auto& client : g_gameServer.GetClients()) {

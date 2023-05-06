@@ -14,7 +14,7 @@ public:
 	void ResetClients();
 
 	Short2 GetPlayerPosition(UINT id);
-	Short2 Move(UINT id, Short2 d);
+	Short2 Move(UINT id, UCHAR direction);
 
 	CLIENT& GetClient(UINT id);
 	unordered_map<UINT, CLIENT>& GetClients();

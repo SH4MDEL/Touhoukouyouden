@@ -27,7 +27,7 @@ const static int MAX_BUFF_SIZE = 255;
 
 #pragma comment (lib, "ws2_32.lib")
 
-#include "..\Multiple Access Server\protocol.h"
+#include "..\6. Multithread IOCP - Server\protocol.h"
 
 HANDLE g_hiocp;
 
@@ -127,43 +127,43 @@ void SendPacket(int cl, void* packet)
 void ProcessPacket(int ci, unsigned char packet[])
 {
 	switch (packet[1]) {
-	case SC_MOVE_PLAYER: {
-		SC_MOVE_PLAYER_PACKET* move_packet = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
-		if (move_packet->id < MAX_CLIENTS) {
-			int my_id = client_map[move_packet->id];
+	case SC_PACKET_OBJECT_INFO: {
+		sc_packet_object_info* objectPacket = reinterpret_cast<sc_packet_object_info*>(packet);
+		if (objectPacket->id < MAX_CLIENTS) {
+			int my_id = client_map[objectPacket->id];
 			if (-1 != my_id) {
-				g_clients[my_id].x = move_packet->x;
-				g_clients[my_id].y = move_packet->y;
+				g_clients[my_id].x = objectPacket->coord.x;
+				g_clients[my_id].y = objectPacket->coord.y;
 			}
 			if (ci == my_id) {
-				if (0 != move_packet->move_time) {
-					auto d_ms = duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count() % UINT_MAX - move_packet->move_time;
+				if (0 != objectPacket->moveTime) {
+					auto d_ms = duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count() % UINT_MAX - objectPacket->moveTime;
 					if (global_delay < d_ms) global_delay++;
 					else if (global_delay > d_ms) global_delay--;
 				}
 			}
 		}
+		break;
 	}
-					   break;
-	case SC_ADD_PLAYER: break;
-	case SC_REMOVE_PLAYER: break;
-	case SC_LOGIN_INFO:
+	case SC_PACKET_ADD_PLAYER: break;
+	case SC_PACKET_EXIT_PLAYER: break;
+	case SC_PACKET_LOGIN_CONFIRM:
 	{
 		g_clients[ci].connected = true;
 		active_clients++;
-		SC_LOGIN_INFO_PACKET* login_packet = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet);
+		sc_packet_login_confirm* loginPacket = reinterpret_cast<sc_packet_login_confirm*>(packet);
 		int my_id = ci;
-		client_map[login_packet->id] = my_id;
-		g_clients[my_id].id = login_packet->id;
-		g_clients[my_id].x = login_packet->x;
-		g_clients[my_id].y = login_packet->y;
+		client_map[loginPacket->id] = my_id;
+		g_clients[my_id].id = loginPacket->id;
+		g_clients[my_id].x = 0;
+		g_clients[my_id].y = 0;
 
 		//cs_packet_teleport t_packet;
 		//t_packet.size = sizeof(t_packet);
 		//t_packet.type = CS_TELEPORT;
 		//SendPacket(my_id, &t_packet);
+		break;
 	}
-	break;
 	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
 		while (true);
 	}
@@ -292,7 +292,7 @@ void Adjust_Number_Of_Client()
 	SOCKADDR_IN ServerAddr;
 	ZeroMemory(&ServerAddr, sizeof(SOCKADDR_IN));
 	ServerAddr.sin_family = AF_INET;
-	ServerAddr.sin_port = htons(PORT_NUM);
+	ServerAddr.sin_port = htons(SERVER_PORT);
 	ServerAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 
@@ -312,13 +312,13 @@ void Adjust_Number_Of_Client()
 	DWORD recv_flag = 0;
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_clients[num_connections].client_socket), g_hiocp, num_connections, 0);
 
-	CS_LOGIN_PACKET l_packet;
+	cs_packet_login loginPacket;
 
 	int temp = num_connections;
-	sprintf_s(l_packet.name, "%d", temp);
-	l_packet.size = sizeof(l_packet);
-	l_packet.type = CS_LOGIN;
-	SendPacket(num_connections, &l_packet);
+	//sprintf_s(loginPacket.name, "%d", temp);
+	loginPacket.size = sizeof(loginPacket);
+	loginPacket.type = CS_PACKET_LOGIN;
+	SendPacket(num_connections, &loginPacket);
 
 
 	int ret = WSARecv(g_clients[num_connections].client_socket, &g_clients[num_connections].recv_over.wsabuf, 1,
@@ -346,16 +346,16 @@ void Test_Thread()
 			if (false == g_clients[i].connected) continue;
 			if (g_clients[i].last_move_time + 1s > high_resolution_clock::now()) continue;
 			g_clients[i].last_move_time = high_resolution_clock::now();
-			CS_MOVE_PACKET my_packet;
+			cs_packet_move my_packet;
 			my_packet.size = sizeof(my_packet);
-			my_packet.type = CS_MOVE;
+			my_packet.type = CS_PACKET_MOVE;
 			switch (rand() % 4) {
 			case 0: my_packet.direction = 0; break;
 			case 1: my_packet.direction = 1; break;
 			case 2: my_packet.direction = 2; break;
 			case 3: my_packet.direction = 3; break;
 			}
-			my_packet.move_time = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count()) % UINT_MAX;
+			my_packet.moveTime = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count()) % UINT_MAX;
 			SendPacket(i, &my_packet);
 		}
 	}

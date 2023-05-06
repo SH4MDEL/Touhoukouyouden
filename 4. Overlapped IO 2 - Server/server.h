@@ -14,7 +14,7 @@ public:
 	POINT InputPlayer(UINT id);
 
 	POINT GetPlayerPosition(UINT id);
-	POINT Move(UINT id, POINT d);
+	POINT Move(UINT id, UCHAR direction);
 	POINT GetPlayer(UINT id);
 	unordered_map<UINT, POINT>& GetPlayers();
 

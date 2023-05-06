@@ -25,6 +25,12 @@ extern GameServer	g_gameServer;
 extern SOCKET		g_listenSock;
 extern mt19937		g_randomEngine;
 
+namespace Move
+{
+    extern int dx[];
+    extern int dy[];
+}
+
 namespace Utiles
 {
     inline INT GetRandomINT(INT min, INT max)

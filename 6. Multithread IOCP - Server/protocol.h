@@ -32,7 +32,7 @@ struct Short2 {
 	Short2& operator-=(const Short2& rhs) { (*this) = (*this) - rhs; return *this; }
 };
 
-#define NETWORK_DEBUG
+//#define NETWORK_DEBUG
 
 #pragma pack(push, 1)
 struct packet
@@ -51,7 +51,8 @@ struct cs_packet_login : public packet
 struct cs_packet_move : public packet
 {
 	unsigned char id;
-	Short2 coord;
+	unsigned char direction;
+	UINT moveTime;
 };
 
 struct cs_packet_logout : public packet
@@ -76,6 +77,7 @@ struct sc_packet_object_info : public packet
 {
 	unsigned char id;
 	Short2 coord;
+	UINT moveTime;
 };
 
 struct sc_packet_exit_player : public packet

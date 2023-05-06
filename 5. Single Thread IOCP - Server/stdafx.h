@@ -30,6 +30,12 @@ constexpr int MAX_USER = 10000;
 
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
 
+namespace Move
+{
+    extern int dx[];
+    extern int dy[];
+}
+
 namespace Utiles
 {
     inline INT GetRandomINT(INT min, INT max)

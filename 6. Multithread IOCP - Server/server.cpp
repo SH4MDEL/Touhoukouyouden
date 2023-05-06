@@ -38,10 +38,12 @@ Short2 GameServer::GetPlayerPosition(UINT id)
 	return Short2{ m_clients[id]->m_position.x, m_clients[id]->m_position.y };
 }
 
-Short2 GameServer::Move(UINT id, Short2 d)
+Short2 GameServer::Move(UINT id, UCHAR direction)
 {
 	Short2 from = GetPlayerPosition(id);
-	Short2 to = from + d;
+	auto dx = Move::dx[direction];
+	auto dy = Move::dy[direction];
+	Short2 to = { from.x + (SHORT)dx , from.y + (SHORT)dy};
 	if (to.x > MAP_WIDTH || to.x < 0 || to.y > MAP_HEIGHT || to.y < 0) {
 		return from;
 	}

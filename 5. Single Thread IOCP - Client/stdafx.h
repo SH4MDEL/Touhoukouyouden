@@ -40,9 +40,3 @@ extern INT							g_clientID;
 extern sf::Font						g_font;
 extern INT							g_leftX;
 extern INT							g_topY;
-
-namespace Move
-{
-	extern int dx[];
-	extern int dy[];
-}

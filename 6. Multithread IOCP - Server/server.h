@@ -13,7 +13,7 @@ public:
 	void ExitClient(UINT id);
 
 	Short2 GetPlayerPosition(UINT id);
-	Short2 Move(UINT id, Short2 d);
+	Short2 Move(UINT id, UCHAR direction);
 
 	shared_ptr<CLIENT> GetClient(UINT id);
 	array<shared_ptr<CLIENT>, MAX_USER>& GetClients();
