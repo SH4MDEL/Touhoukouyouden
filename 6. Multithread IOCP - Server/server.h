@@ -18,7 +18,6 @@ public:
 	shared_ptr<CLIENT> GetClient(UINT id);
 	array<shared_ptr<CLIENT>, MAX_USER>& GetClients();
 
-
 private:
 	array<shared_ptr<CLIENT>, MAX_USER> m_clients;
 };

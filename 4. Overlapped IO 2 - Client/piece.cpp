@@ -1,6 +1,6 @@
 #include "piece.h"
 
-Piece::Piece(POINT position, POINT length) : Object(position, length)
+Piece::Piece(Short2 position, Short2 length) : Object(position, length)
 {
 }
 
@@ -17,7 +17,7 @@ void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
 	//window->draw(m_name);
 }
 
-void Piece::SetPosition(POINT position)
+void Piece::SetPosition(Short2 position)
 {
 	m_position = position;
 }

@@ -30,6 +30,8 @@ struct CS_MOVE_PACKET {
 	unsigned	move_time;
 };
 
+
+
 struct SC_LOGIN_INFO_PACKET {
 	unsigned char size;
 	char	type;

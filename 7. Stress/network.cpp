@@ -130,14 +130,14 @@ void ProcessPacket(int ci, unsigned char packet[])
 	case SC_PACKET_OBJECT_INFO: {
 		sc_packet_object_info* objectPacket = reinterpret_cast<sc_packet_object_info*>(packet);
 		if (objectPacket->id < MAX_CLIENTS) {
-			int my_id = client_map[objectPacket->id];
-			if (-1 != my_id) {
-				g_clients[my_id].x = objectPacket->coord.x;
-				g_clients[my_id].y = objectPacket->coord.y;
+			int id = client_map[objectPacket->id];
+			if (-1 != id) {
+				g_clients[id].x = objectPacket->coord.x;
+				g_clients[id].y = objectPacket->coord.y;
 			}
-			if (ci == my_id) {
+			if (ci == id) {
 				if (0 != objectPacket->moveTime) {
-					auto d_ms = duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count() % UINT_MAX - objectPacket->moveTime;
+					auto d_ms = static_cast<unsigned int>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count()) - objectPacket->moveTime;
 					if (global_delay < d_ms) global_delay++;
 					else if (global_delay > d_ms) global_delay--;
 				}
@@ -145,7 +145,17 @@ void ProcessPacket(int ci, unsigned char packet[])
 		}
 		break;
 	}
-	case SC_PACKET_ADD_PLAYER: break;
+	case SC_PACKET_ADD_PLAYER: {
+		sc_packet_add_player* objectPacket = reinterpret_cast<sc_packet_add_player*>(packet);
+		if (objectPacket->id < MAX_CLIENTS) {
+			int id = client_map[objectPacket->id];
+			if (-1 != id) {
+				g_clients[id].x = objectPacket->coord.x;
+				g_clients[id].y = objectPacket->coord.y;
+			}
+		}
+		break;
+	}
 	case SC_PACKET_EXIT_PLAYER: break;
 	case SC_PACKET_LOGIN_CONFIRM:
 	{
@@ -278,11 +288,11 @@ void Adjust_Number_Of_Client()
 		client_to_close++;
 		return;
 	}
-	else
-		if (DELAY_LIMIT < t_delay) {
+	else if (DELAY_LIMIT < t_delay) {
 			delay_multiplier = 10;
 			return;
-		}
+	}
+
 	if (max_limit - (max_limit / 20) < active_clients) return;
 
 	increasing = true;
@@ -355,7 +365,8 @@ void Test_Thread()
 			case 2: my_packet.direction = 2; break;
 			case 3: my_packet.direction = 3; break;
 			}
-			my_packet.moveTime = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count()) % UINT_MAX;
+			my_packet.moveTime = static_cast<unsigned>(duration_cast<milliseconds>
+				(high_resolution_clock::now().time_since_epoch()).count());
 			SendPacket(i, &my_packet);
 		}
 	}

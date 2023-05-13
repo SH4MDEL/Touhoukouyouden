@@ -127,7 +127,7 @@ bound가 cache line 두 라인에 걸쳐 있으면 데이터를 읽고/쓰기 위해
 	. read 도중 다른 쓰레드가 값을 변경
 - 이유는?
 	. cache line size boundary
-	. 확인 : -2fmf -1, -3, -4로 교체
+	. 확인 : -2를 -1, -3, -4로 교체
 - 대책은?
 	. Byte밖에 믿을 수 없다.
 	. Pointer가 아닌 '변수'는 Visual C++가 알아서 잘 해준다.

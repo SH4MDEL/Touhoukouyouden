@@ -1,6 +1,6 @@
 #include "Object.h"
 
-Object::Object(POINT position, POINT length) : m_position(position), m_length(length) {}
+Object::Object(Short2 position, Short2 length) : m_position(position), m_length(length) {}
 
 void Object::Update(float timeElapsed) {}
 
@@ -9,7 +9,7 @@ void Object::Render(const shared_ptr<sf::RenderWindow>& window)
 	window->draw(m_sprite);
 }
 
-void Object::SetPosition(POINT position)
+void Object::SetPosition(Short2 position)
 {
 	m_position = position;
 	m_sprite.setPosition(position.x, position.y);
@@ -21,7 +21,7 @@ void Object::SetTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, IN
 	m_sprite.setTextureRect(sf::IntRect(x, y, dx, dy));
 }
 
-POINT Object::GetPosition()
+Short2 Object::GetPosition()
 {
 	return m_position;
 }

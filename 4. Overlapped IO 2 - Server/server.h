@@ -11,12 +11,11 @@ public:
 
 	int RegistPlayer(UINT id);
 	void ExitPlayer(UINT id);
-	POINT InputPlayer(UINT id);
 
-	POINT GetPlayerPosition(UINT id);
-	POINT Move(UINT id, UCHAR direction);
-	POINT GetPlayer(UINT id);
-	unordered_map<UINT, POINT>& GetPlayers();
+	Short2 GetPlayerPosition(UINT id);
+	Short2 Move(UINT id, UCHAR direction);
+	Short2 GetPlayer(UINT id);
+	unordered_map<UINT, Short2>& GetPlayers();
 
 	SESSION& GetClient(UINT id);
 	unordered_map<UINT, SESSION>& GetClients();
@@ -25,7 +24,7 @@ public:
 	void ResetClients();
 
 private:
-	unordered_map<UINT, POINT>	m_player;
+	unordered_map<UINT, Short2>	m_player;
 	unordered_map<UINT, SESSION>	m_clients;
 };
 

@@ -12,7 +12,7 @@
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
-constexpr int VIEW_RANGE = 4;
+constexpr int VIEW_RANGE = 5;
 
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
 class OVER_EXP {
@@ -117,9 +117,6 @@ OVER_EXP g_a_over;
 
 bool can_see(int a, int b)
 {
-	//return VIEW_RANGE * VIEW_RANGE >= (clients[a].x - clients[b].x) * (clients[a].x - clients[b].x) +
-	//	(clients[a].y - clients[b].y) * (clients[a].y - clients[b].y);
-
 	if (std::abs(clients[a].x - clients[b].x) > VIEW_RANGE) return false;
 	return std::abs(clients[a].y - clients[b].y <= VIEW_RANGE);
 }
@@ -127,7 +124,7 @@ bool can_see(int a, int b)
 void SESSION::send_move_packet(int c_id)
 {
 	_vl.lock();
-	if (view_list.count(c_id) == 0) {
+	if (view_list.count(c_id) == 0 && _id != c_id) {
 		_vl.unlock();
 		send_add_player_packet(c_id);
 		return;

@@ -7,7 +7,7 @@ GameServer::GameServer()
 int GameServer::RegistPlayer(UINT id)
 {
 	if (m_player.find(id) == m_player.end()) {
-		m_player.insert({ id, {Utiles::GetRandomINT(0, MAP_WIDTH), Utiles::GetRandomINT(0, MAP_HEIGHT)} });
+		m_player.insert({ id, {(SHORT)Utiles::GetRandomINT(0, MAP_WIDTH), (SHORT)Utiles::GetRandomINT(0, MAP_HEIGHT)} });
 		return id;
 	}
 	return -1;
@@ -20,20 +20,20 @@ void GameServer::ExitPlayer(UINT id)
 	}
 }
 
-POINT GameServer::GetPlayerPosition(UINT id)
+Short2 GameServer::GetPlayerPosition(UINT id)
 {
 	if (m_player.find(id) != m_player.end()) {
 		return m_player[id];
 	}
-	return POINT{ -1, -1 };
+	return Short2{ -1, -1 };
 }
 
-POINT GameServer::Move(UINT id, UCHAR direction)
+Short2 GameServer::Move(UINT id, UCHAR direction)
 {
-	POINT from = GetPlayerPosition(id);
-	auto dx = Move::dx[direction];
-	auto dy = Move::dy[direction];
-	POINT to = { from.x + (SHORT)dx , from.y + (SHORT)dy };
+	Short2 from = GetPlayerPosition(id);
+	short dx = (SHORT)Move::dx[direction];
+	short dy = (SHORT)Move::dy[direction];
+	Short2 to = { from.x + dx , from.y + dy };
 	if (to.x > MAP_WIDTH || to.x < 0 || to.y > MAP_HEIGHT || to.y < 0) {
 		return from;
 	}
@@ -41,12 +41,12 @@ POINT GameServer::Move(UINT id, UCHAR direction)
 	return m_player[id];
 }
 
-POINT GameServer::GetPlayer(UINT id)
+Short2 GameServer::GetPlayer(UINT id)
 {
 	return m_player[id];
 }
 
-unordered_map<UINT, POINT>& GameServer::GetPlayers()
+unordered_map<UINT, Short2>& GameServer::GetPlayers()
 {
 	return m_player;
 }

@@ -18,6 +18,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <random>
+#include <memory>
 using namespace std;
 
 #define endl "\n"
@@ -30,7 +31,7 @@ class EXP_OVER;
 extern EXP_OVER     g_expOverlapped;
 extern mt19937		g_randomEngine;
 
-constexpr int MAX_USER = 10000;
+constexpr int MAX_USER = 1000;
 
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
 

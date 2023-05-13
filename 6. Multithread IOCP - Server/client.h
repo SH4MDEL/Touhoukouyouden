@@ -14,11 +14,17 @@ public:
 	void DoRecv();
 	void DoSend(void* packet);
 
+	void SendLoginConfirm();
+	void SendAddPlayer(INT id);
+	void SendObjectInfo(INT id);
+	void SendExitPlayer(INT id);
+
 public:
 	EXP_OVER	m_recvOver;
 	mutex		m_mutex;
 	State		m_state;
 	INT			m_id;
+	INT			m_lastMoveTime;
 	SOCKET		m_socket;
 
 	Short2		m_position;

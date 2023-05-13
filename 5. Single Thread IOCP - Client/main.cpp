@@ -132,9 +132,6 @@ void ProcessPacket(char* buf)
     {
         sc_packet_add_player* pk = reinterpret_cast<sc_packet_add_player*>(buf);
         MainScene* scene = (MainScene*)g_gameFramework.GetScene();
-        cout << "새로 들어온 플레이어 정보 전송" << endl;
-        cout << g_clientID << endl;
-        cout << (int)pk->id << ", " << pk->coord.x << ", " << pk->coord.y << endl;
         scene->AddPlayer(pk->id, pk->coord);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_ADD_PLAYER 수신" << endl;

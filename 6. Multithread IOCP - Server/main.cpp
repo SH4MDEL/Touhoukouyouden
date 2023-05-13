@@ -62,6 +62,10 @@ void WorkerThread(HANDLE hiocp)
 				cout << "GetQueuedCompletionStatus Error on client[" << key << "]\n";
 				// 접속 종료 패킷 전송
 				for (auto& pl : g_gameServer.GetClients()) {
+					{
+						unique_lock<mutex> lock(pl->m_mutex);
+						if (pl->m_state != CLIENT::INGAME) continue;
+					}
 					if (pl->m_id == key) continue;
 					sc_packet_exit_player packet;
 					packet.size = sizeof(sc_packet_exit_player);
@@ -70,9 +74,6 @@ void WorkerThread(HANDLE hiocp)
 					pl->DoSend(&packet);
 				}
 				g_gameServer.ExitClient(key);
-
-				lock_guard<mutex> ll(g_gameServer.GetClient(key)->m_mutex);
-				g_gameServer.GetClient(key)->m_state = CLIENT::FREE;
 				if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 				continue;
 			}
@@ -81,6 +82,10 @@ void WorkerThread(HANDLE hiocp)
 		if ((received == 0) && ((expOverlapped->m_compType == OP_RECV) || (expOverlapped->m_compType == OP_SEND))) {
 			// 접속 종료 패킷 전송
 			for (auto& pl : g_gameServer.GetClients()) {
+				{
+					unique_lock<mutex> lock(pl->m_mutex);
+					if (pl->m_state != CLIENT::INGAME) continue;
+				}
 				if (pl->m_id == key) continue;
 				sc_packet_exit_player packet;
 				packet.size = sizeof(sc_packet_exit_player);
@@ -89,9 +94,6 @@ void WorkerThread(HANDLE hiocp)
 				pl->DoSend(&packet);
 			}
 			g_gameServer.ExitClient(key);
-
-			unique_lock<mutex> lock(g_gameServer.GetClient(key)->m_mutex);
-			g_gameServer.GetClient(key)->m_state = CLIENT::FREE;
 			if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 			continue;
 		}
@@ -132,6 +134,9 @@ void WorkerThread(HANDLE hiocp)
 
 				if (remainPacketSize < packetSize) {
 					g_gameServer.GetClient(key)->m_prevRemain = remainPacketSize;
+					if (remainPacketSize != 0) {
+						memcpy(expOverlapped->m_sendMsg, remainPacketBuffer, remainPacketSize);
+					}
 					break;
 				}
 				// 하나의 온전한 패킷을 만들기 위한 사이즈보다
@@ -149,7 +154,9 @@ void WorkerThread(HANDLE hiocp)
 					memcpy(expOverlapped->m_sendMsg, remainPacketBuffer, remainPacketSize);
 				}
 			}
+			if (remainPacketSize == 0) g_gameServer.GetClient(key)->m_prevRemain = 0;
 			g_gameServer.GetClient(key)->DoRecv();
+
 			break;
 		}
 		case OP_SEND:
@@ -176,7 +183,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			sc_packet_login_confirm sendpk;
 			sendpk.size = sizeof(sc_packet_login_confirm);
 			sendpk.type = SC_PACKET_LOGIN_CONFIRM;
-			sendpk.id = (CHAR)cid;
+			sendpk.id = cid;
 			g_gameServer.GetClient(cid)->DoSend(&sendpk);
 			{
 				unique_lock<mutex> lock(g_gameServer.GetClient(cid)->m_mutex);
@@ -186,40 +193,16 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			cout << "SC_PACKET_LOGIN_CONFIRM 송신 - ID : " << (int)sendpk.id << endl;
 #endif
 		}
+		g_gameServer.GetClient(cid)->SendAddPlayer(cid);
 
-		// 새로 들어온 플레이어 정보 모든 플레이어에 전송
-		sc_packet_add_player sendpk;
-		sendpk.size = sizeof(sc_packet_add_player);
-		sendpk.type = SC_PACKET_ADD_PLAYER;
-		sendpk.id = (CHAR)cid;
-		sendpk.coord = g_gameServer.GetClient(cid)->m_position;
-		for (auto& client : g_gameServer.GetClients()) {
-			{
-				unique_lock<mutex> lock(client->m_mutex);
-				if (client->m_state != CLIENT::INGAME) continue;
-			}
-			client->DoSend(&sendpk);
-#ifdef NETWORK_DEBUG
-			cout << "SC_PACKET_ADD_PLAYER 송신 - ID : " << (int)sendpk.id << endl;
-#endif
-		}
-
-		//  새로 들어온 플레이어에 자신의 정보를 제외한 모든 플레이어의 정보를 전송
 		for (auto& client : g_gameServer.GetClients()) {
 			{
 				unique_lock<mutex> lock(client->m_mutex);
 				if (client->m_state != CLIENT::INGAME) continue;
 			}
 			if (client->m_id == cid) continue;
-			sc_packet_add_player sendpk;
-			sendpk.size = sizeof(sc_packet_add_player);
-			sendpk.type = SC_PACKET_ADD_PLAYER;
-			sendpk.id = client->m_id;
-			sendpk.coord = g_gameServer.GetPlayerPosition(client->m_id);
-			g_gameServer.GetClient(cid)->DoSend(&sendpk);
-#ifdef NETWORK_DEBUG
-			cout << "SC_PACKET_ADD_PLAYER 송신 - ID : " << (int)sendpk.id << endl;
-#endif
+			client->SendAddPlayer(cid);
+			g_gameServer.GetClient(cid)->SendAddPlayer(client->m_id);
 		}
 		break;
 	}
@@ -232,13 +215,15 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		sc_packet_object_info sendpk;
 		sendpk.size = sizeof(sc_packet_object_info);
 		sendpk.type = SC_PACKET_OBJECT_INFO;
-		sendpk.id = (*pk).id;
-		sendpk.coord = g_gameServer.Move((*pk).id, (*pk).direction);
+		sendpk.id = cid;
+		sendpk.coord = g_gameServer.Move(cid, (*pk).direction);
 		sendpk.moveTime = pk->moveTime;
-
+		
+		int asdf = 0;
 		// 업데이트된 플레이어의 정보를 모든 플레이어에게 보냄
 		for (auto& client : g_gameServer.GetClients()) {
 			if (client->m_state != CLIENT::INGAME) continue;
+
 			client->DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
 			cout << "SC_PACKET_OBJECT_INFO 송신 - ID : " << client->m_id << endl;

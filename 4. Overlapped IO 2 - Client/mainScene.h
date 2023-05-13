@@ -18,10 +18,10 @@ public:
 	
 	void OnProcessingKeyboardMessage(sf::Event inputEvent) override;
 
-	void AddPlayer(int id, POINT position) override;
+	void AddPlayer(int id, Short2 position) override;
 	void ExitPlayer(int id) override;
 
-	void Move(INT id, POINT position);
+	void Move(INT id, Short2 position);
 
 private:
 	virtual void BuildObjects() override;

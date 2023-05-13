@@ -82,7 +82,6 @@ void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
 		cs_packet_move packet;
 		packet.size = sizeof(cs_packet_move);
 		packet.type = CS_PACKET_MOVE;
-		packet.id = g_clientID;
 		packet.direction = sf::Keyboard::Down - inputEvent.key.code;
 		Send(&packet);
 #ifdef NETWORK_DEBUG

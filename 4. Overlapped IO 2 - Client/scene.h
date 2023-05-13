@@ -22,7 +22,7 @@ public:
 
 	virtual void OnProcessingKeyboardMessage(sf::Event inputEvent) = 0;
 
-	virtual void AddPlayer(int id, POINT position) = 0;
+	virtual void AddPlayer(int id, Short2 position) = 0;
 	virtual void ExitPlayer(int id) = 0;
 
 protected:

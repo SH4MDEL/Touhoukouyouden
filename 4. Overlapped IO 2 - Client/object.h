@@ -5,21 +5,21 @@ class Object
 {
 public:
 	Object() = default;
-	Object(POINT position, POINT length);
+	Object(Short2 position, Short2 length);
 	virtual ~Object() = default;
 
 	virtual void Update(float timeElapsed);
 	virtual void Render(const shared_ptr<sf::RenderWindow>& window);
 
-	virtual void SetPosition(POINT position);
-	virtual void SetLength(POINT length) { m_length = length; }
+	virtual void SetPosition(Short2 position);
+	virtual void SetLength(Short2 length) { m_length = length; }
 	virtual void SetTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, INT dx, INT dy);
 
-	POINT GetPosition();
+	Short2 GetPosition();
 
 protected:
-	POINT					m_position;
-	POINT					m_length;
+	Short2					m_position;
+	Short2					m_length;
 
 	sf::Sprite				m_sprite;
 };

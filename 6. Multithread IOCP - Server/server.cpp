@@ -16,8 +16,10 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 			m_clients[i]->m_state = CLIENT::ALLOC;
 		}
 		m_clients[i]->m_id = i;
-		m_clients[i]->m_position.x = Utiles::GetRandomINT(0, MAP_WIDTH);
-		m_clients[i]->m_position.y = Utiles::GetRandomINT(0, MAP_HEIGHT);
+		//m_clients[i]->m_position.x = Utiles::GetRandomINT(0, MAP_WIDTH);
+		//m_clients[i]->m_position.y = Utiles::GetRandomINT(0, MAP_HEIGHT);
+		m_clients[i]->m_position.x = rand() % (MAP_WIDTH);
+		m_clients[i]->m_position.y = rand() % (MAP_HEIGHT);
 		m_clients[i]->m_name[0] = 0;
 		m_clients[i]->m_prevRemain = 0;
 		m_clients[i]->m_socket = c_socket;

@@ -47,12 +47,12 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 			int tileY = j + g_topY;
 			if (tileX < 0 || tileX > MAP_WIDTH || tileY < 0 || tileY > MAP_HEIGHT) continue;
 			if (0 == (tileX / 3 + tileY / 3) % 2) {
-				m_whiteTile->SetPosition({ TILE_WIDTH * i, TILE_WIDTH * j });
+				m_whiteTile->SetPosition({ TILE_WIDTH * (SHORT)i, TILE_WIDTH * (SHORT)j });
 				m_whiteTile->Render(window);
 			}
 			else
 			{
-				m_blackTile->SetPosition({ TILE_WIDTH * i, TILE_WIDTH * j });
+				m_blackTile->SetPosition({ TILE_WIDTH * (SHORT)i, TILE_WIDTH * (SHORT)j });
 				m_blackTile->Render(window);
 			}
 		}
@@ -80,8 +80,8 @@ void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
 		cs_packet_move packet;
 		packet.size = sizeof(cs_packet_move);
 		packet.type = CS_PACKET_MOVE;
-		packet.id = g_clientID;
 		packet.direction = sf::Keyboard::Down - inputEvent.key.code;
+		cout << (int)packet.direction << endl;
 		Send(&packet);
 #ifdef NETWORK_DEBUG
 		cout << "CS_PACKET_MOVE ¼Û½Å" << endl;
@@ -92,7 +92,7 @@ void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
 	}
 }
 
-void MainScene::AddPlayer(int id, POINT position)
+void MainScene::AddPlayer(int id, Short2 position)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Piece>();
@@ -112,7 +112,7 @@ void MainScene::ExitPlayer(INT id)
 	m_players.erase(id);
 }
 
-void MainScene::Move(INT id, POINT position)
+void MainScene::Move(INT id, Short2 position)
 {
 	if (id == g_clientID) {
 		m_avatar->SetPosition(position);
