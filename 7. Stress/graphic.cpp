@@ -6,7 +6,8 @@
 *		If You've Found This Code Useful, Please Let Me Know.
 *		Visit My Site At nehe.gamedev.net
 */
-#pragma once;
+#pragma once
+
 #include <windows.h>		// Header File For Windows
 #include <math.h>			// Header File For Windows Math Library
 #include <stdio.h>			// Header File For Standard Input/Output

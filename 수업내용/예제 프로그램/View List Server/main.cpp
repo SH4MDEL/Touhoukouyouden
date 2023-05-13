@@ -124,7 +124,7 @@ bool can_see(int a, int b)
 void SESSION::send_move_packet(int c_id)
 {
 	_vl.lock();
-	if (view_list.count(c_id) == 0 && _id != c_id) {
+	if (view_list.count(c_id) == 0) {
 		_vl.unlock();
 		send_add_player_packet(c_id);
 		return;
@@ -213,7 +213,7 @@ void process_packet(int c_id, char* packet)
 
 		unordered_set<int> new_vl;
 		for (auto& cl : clients) {
-			if (cl._id == c_id) continue;
+			//if (cl._id == c_id) continue;
 			if (cl._state != ST_INGAME) continue;
 			if (!can_see(cl._id, c_id)) continue;
 

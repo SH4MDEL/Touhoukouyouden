@@ -19,7 +19,7 @@ using namespace chrono;
 
 extern HWND		hWnd;
 
-const static int MAX_TEST = 1000;
+const static int MAX_TEST = 10000;
 const static int MAX_CLIENTS = MAX_TEST * 2;
 const static int INVALID_ID = -1;
 const static int MAX_PACKET_SIZE = 255;
@@ -27,7 +27,7 @@ const static int MAX_BUFF_SIZE = 255;
 
 #pragma comment (lib, "ws2_32.lib")
 
-#include "..\6. Multithread IOCP - Server\protocol.h"
+#include "..\/7. View List - Server\protocol.h"
 
 HANDLE g_hiocp;
 
@@ -63,7 +63,7 @@ atomic_int num_connections;
 atomic_int client_to_close;
 atomic_int active_clients;
 
-int			global_delay;				// ms단위, 1000이 넘으면 클라이언트 증가 종료
+unsigned int			global_delay;				// ms단위, 1000이 넘으면 클라이언트 증가 종료
 
 vector <thread*> worker_threads;
 thread test_thread;
