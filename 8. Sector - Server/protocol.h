@@ -34,6 +34,11 @@ struct Short2 {
 	Short2 operator-(const Short2& rhs) const { return Short2{ x - rhs.x, y - rhs.y }; }
 	Short2& operator+=(const Short2& rhs) { (*this) = (*this) + rhs; return *this; }
 	Short2& operator-=(const Short2& rhs) { (*this) = (*this) - rhs; return *this; }
+
+	bool operator<(const Short2& rhs) const {
+		if (x != rhs.x) return x < rhs.x;
+		return y < rhs.y;
+	}
 };
 
 struct packet

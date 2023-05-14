@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="소스 파일\Framework">
+      <UniqueIdentifier>{792a46c2-3bc5-4f38-83cb-e8bed98ead31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Object">
+      <UniqueIdentifier>{6eef6e16-2e0c-40e4-a6ed-ed68f43d4f7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Scene">
+      <UniqueIdentifier>{70eb43d1-b696-401a-b65f-4ca7f50e65d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Singleton">
+      <UniqueIdentifier>{c0700e94-55b0-443a-9860-aa22558e2f68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Framework">
+      <UniqueIdentifier>{c5e82d38-0831-4859-9346-e5697af88b5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Object">
+      <UniqueIdentifier>{f549ca66-b0c4-4065-a4af-e1911498de4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Scene">
+      <UniqueIdentifier>{eebba162-3571-4cee-8a58-5a99362e332f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Singleton">
+      <UniqueIdentifier>{7c3a61a3-1872-4132-9744-53cf978f1dc9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="framework.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="mainScene.cpp">
+      <Filter>소스 파일\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="object.cpp">
+      <Filter>소스 파일\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="piece.cpp">
+      <Filter>소스 파일\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="scene.cpp">
+      <Filter>소스 파일\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="singleton.cpp">
+      <Filter>소스 파일\Singleton</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.cpp">
+      <Filter>소스 파일\Singleton</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="mainScene.h">
+      <Filter>헤더 파일\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="piece.h">
+      <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="object.h">
+      <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="scene.h">
+      <Filter>헤더 파일\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="singleton.h">
+      <Filter>헤더 파일\Singleton</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>헤더 파일\Singleton</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

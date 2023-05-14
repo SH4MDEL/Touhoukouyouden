@@ -35,6 +35,9 @@ extern mt19937		g_randomEngine;
 constexpr int MAX_USER = 10000;
 constexpr int VIEW_RANGE = 5;
 
+extern array<array<unordered_set<int>, MAP_WIDTH / (VIEW_RANGE * 2) + 1>, MAP_HEIGHT / (VIEW_RANGE * 2) + 1> g_sector;
+extern array<array<mutex, MAP_WIDTH / (VIEW_RANGE * 2) + 1>, MAP_HEIGHT / (VIEW_RANGE * 2) + 1> g_sectorLock;
+
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
 
 namespace Move

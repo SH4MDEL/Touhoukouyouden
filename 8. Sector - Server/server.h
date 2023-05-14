@@ -14,7 +14,7 @@ public:
 
 	Short2 GetPlayerPosition(UINT id);
 	BOOL CanSee(UINT id1, UINT id2);
-	Short2 Move(UINT id, UCHAR direction);
+	void Move(UINT id, UCHAR direction);
 
 	shared_ptr<CLIENT> GetClient(UINT id);
 	array<shared_ptr<CLIENT>, MAX_USER>& GetClients();

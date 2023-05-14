@@ -75,7 +75,9 @@ void WorkerThread(HANDLE hiocp)
 			}
 		}
 
-		if ((received == 0) && ((expOverlapped->m_compType == OP_RECV) || (expOverlapped->m_compType == OP_SEND))) {
+		if ((received == 0) && (
+			(expOverlapped->m_compType == OP_RECV) || 
+			(expOverlapped->m_compType == OP_SEND))) {
 			// 접속 종료 패킷 전송
 			for (auto& pl : g_gameServer.GetClients()) {
 				{
@@ -218,7 +220,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			newViewList.insert(client->m_id);
 		}
 
-		// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
+		// 새 View List에는 있는데 이전에 없던 플레이어의 정보 추가
 		for (auto& playerID : newViewList) {
 			g_gameServer.GetClient(cid)->m_viewLock.lock();
 			if (!g_gameServer.GetClient(cid)->m_viewList.count(playerID)) {
@@ -234,7 +236,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			}
 		}
 		
-		// 새 View List에 제거되었는데 이전에 있던 플레이어의 정보 삭제
+		// 새 View List는 없는데 이전에 있던 플레이어의 정보 삭제
 		g_gameServer.GetClient(cid)->m_viewLock.lock();
 		auto oldViewList = g_gameServer.GetClient(cid)->m_viewList;
 		g_gameServer.GetClient(cid)->m_viewLock.unlock();

@@ -43,7 +43,7 @@ Short2 GameServer::GetPlayerPosition(UINT id)
 BOOL GameServer::CanSee(UINT id1, UINT id2)
 {
 	if (std::abs(m_clients[id1]->m_position.x - m_clients[id2]->m_position.x) > VIEW_RANGE) return false;
-	return std::abs(m_clients[id1]->m_position.y - m_clients[id2]->m_position.y <= VIEW_RANGE);
+	return std::abs(m_clients[id1]->m_position.y - m_clients[id2]->m_position.y) <= VIEW_RANGE;
 }
 
 Short2 GameServer::Move(UINT id, UCHAR direction)

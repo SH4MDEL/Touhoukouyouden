@@ -61,6 +61,11 @@ void WorkerThread(HANDLE hiocp)
 			else {
 				cout << "GetQueuedCompletionStatus Error on client[" << key << "]\n";
 				// 접속 종료 패킷 전송
+
+				g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].lock();
+				g_sector[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].erase(key);
+				g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].unlock();
+
 				for (auto& pl : g_gameServer.GetClients()) {
 					{
 						unique_lock<mutex> lock(pl->m_mutex);
@@ -69,6 +74,8 @@ void WorkerThread(HANDLE hiocp)
 					if (pl->m_id == key) continue;
 					pl->SendExitPlayer(key);
 				}
+
+
 				g_gameServer.ExitClient(key);
 				if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 				continue;
@@ -77,6 +84,11 @@ void WorkerThread(HANDLE hiocp)
 
 		if ((received == 0) && ((expOverlapped->m_compType == OP_RECV) || (expOverlapped->m_compType == OP_SEND))) {
 			// 접속 종료 패킷 전송
+
+			g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].lock();
+			g_sector[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].erase(key);
+			g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].unlock();
+
 			for (auto& pl : g_gameServer.GetClients()) {
 				{
 					unique_lock<mutex> lock(pl->m_mutex);
@@ -208,14 +220,27 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		g_gameServer.Move(cid, (*pk).direction);
 		g_gameServer.GetClient(cid)->m_lastMoveTime = pk->moveTime;
 		
-		
-		// View List에 시야 내 플레이어의 ID를 담음.
+		// 섹터 안에 있는 오브젝트의 ID를 담음.
 		unordered_set<int> newViewList;
-		for (auto& client : g_gameServer.GetClients()) {
-			if (client->m_state != CLIENT::INGAME) continue;
-			if (!g_gameServer.CanSee(cid, client->m_id)) continue;
+		short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
+		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+		// 주변 9개의 섹터 전부 조사
+		for (int i = 0; i < 9; ++i) {
+			if (sectorX + dx[i] >= MAP_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+				sectorY + dy[i] >= MAP_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+				continue;
+			}
 
-			newViewList.insert(client->m_id);
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+			for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+				if (g_gameServer.GetClient(id)->m_state != CLIENT::INGAME) continue;
+				if (!g_gameServer.CanSee(cid, id)) continue;
+
+				newViewList.insert(id);
+			}
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 		}
 
 		// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
