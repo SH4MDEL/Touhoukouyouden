@@ -31,8 +31,12 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 void GameServer::ExitClient(UINT id)
 {
 	closesocket(m_clients[id]->m_socket);
-	lock_guard<mutex> lock{ m_clients[id]->m_mutex };
-	m_clients[id]->m_state = CLIENT::FREE;
+	{
+		unique_lock<mutex> stateLock{ m_clients[id]->m_mutex };
+		m_clients[id]->m_state = CLIENT::FREE;
+	}
+	unique_lock<mutex> viewLock{ m_clients[id]->m_viewLock };
+	m_clients[id]->m_viewList.clear();
 }
 
 Short2 GameServer::GetPlayerPosition(UINT id)
