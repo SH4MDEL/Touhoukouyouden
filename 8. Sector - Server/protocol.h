@@ -18,7 +18,7 @@ constexpr char		SC_PACKET_ADD_PLAYER = 2;
 constexpr char		SC_PACKET_OBJECT_INFO = 3;
 constexpr char		SC_PACKET_EXIT_PLAYER = 4;
 
-#define NETWORK_DEBUG
+//#define NETWORK_DEBUG
 
 #pragma pack(push, 1)
 

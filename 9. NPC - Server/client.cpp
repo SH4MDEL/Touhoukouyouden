@@ -44,10 +44,15 @@ void CLIENT::SendAddPlayer(INT id)
 	sendpk.size = sizeof(sc_packet_add_player);
 	sendpk.type = SC_PACKET_ADD_PLAYER;
 	sendpk.id = id;
-	sendpk.coord = g_gameServer.GetClient((UINT)id)->m_position;
+	if (id < MAX_USER) {
+		sendpk.coord = g_gameServer.GetClient((UINT)id)->m_position;
+	}
+	else {
+		sendpk.coord = g_gameServer.GetNPC((UINT)id)->m_position;
+	}
 	DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
-	cout << "SC_PACKET_ADD_PLAYER 价脚 - ID : " << id << endl;
+	cout << "SC_PACKET_ADD_PLAYER 价脚 - ID : " << id << ", x : " << sendpk.coord.x << ", y : " << sendpk.coord.y << endl;
 #endif
 }
 
@@ -67,12 +72,18 @@ void CLIENT::SendObjectInfo(INT id)
 	sendpk.size = sizeof(sc_packet_object_info);
 	sendpk.type = SC_PACKET_OBJECT_INFO;
 	sendpk.id = id;
-	sendpk.coord = g_gameServer.GetClient(id)->m_position;
-	sendpk.moveTime = g_gameServer.GetClient(id)->m_lastMoveTime;
+	if (id < MAX_USER) {
+		sendpk.coord = g_gameServer.GetClient((UINT)id)->m_position;
+		sendpk.moveTime = g_gameServer.GetClient(id)->m_lastMoveTime;
+	}
+	else {
+		sendpk.coord = g_gameServer.GetNPC((UINT)id)->m_position;
+		sendpk.moveTime = 0;
+	}
 
 	DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
-	cout << "SC_PACKET_OBJECT_INFO 价脚 - ID : " << id << endl;
+	cout << "SC_PACKET_OBJECT_INFO 价脚 - ID : " << id << ", x : " << sendpk.coord.x << ", y : " << sendpk.coord.y << endl;
 #endif
 }
 

@@ -3,7 +3,7 @@ constexpr int BUF_SIZE = 4096;		// 서버 메모리가 허용하는 한 크게 잡는게 낫다.
 constexpr int NAME_SIZE = 20;
 
 constexpr int MAX_USER = 5000;
-constexpr int MAX_NPC = 100000;
+constexpr int MAX_NPC = 200000;
 
 constexpr int W_WIDTH = 2000;
 constexpr int W_HEIGHT = 2000;

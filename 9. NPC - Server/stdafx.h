@@ -32,7 +32,7 @@ class EXP_OVER;
 extern EXP_OVER     g_expOverlapped;
 extern mt19937		g_randomEngine;
 
-constexpr int MAX_USER = 10000;
+constexpr int MAX_USER = 20000;
 constexpr int MAX_NPC = 200000;
 constexpr int VIEW_RANGE = 5;
 

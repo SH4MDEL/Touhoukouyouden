@@ -1,5 +1,5 @@
 #include "npc.h"
 
-NPC::NPC() : m_isActive{false}
+NPC::NPC() : OBJECT(), m_isActive{false}
 {
 }

@@ -62,32 +62,32 @@ struct cs_packet_move : public packet
 
 struct cs_packet_logout : public packet
 {
-	unsigned short id;
+	unsigned int id;
 };
 
 // Server to Client
 
 struct sc_packet_login_confirm : public packet
 {
-	unsigned short id;
+	unsigned int id;
 };
 
 struct sc_packet_add_player : public packet
 {
-	unsigned short id;
+	unsigned int id;
 	Short2 coord;
 };
 
 struct sc_packet_object_info : public packet
 {
-	unsigned short id;
+	unsigned int id;
 	Short2 coord;
 	UINT moveTime;
 };
 
 struct sc_packet_exit_player : public packet
 {
-	unsigned short id;
+	unsigned int id;
 };
 
 #pragma pack(pop)

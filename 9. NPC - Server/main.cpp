@@ -127,7 +127,7 @@ void WorkerThread(HANDLE hiocp)
 			g_clientSocket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
 			ZeroMemory(&g_expOverlapped.m_overlapped, sizeof(g_expOverlapped.m_overlapped));
 			INT addr_size = sizeof(SOCKADDR_IN);
-			AcceptEx(g_serverSocket, g_clientSocket, g_expOverlapped.m_sendMsg, 0, 
+			AcceptEx(g_serverSocket, g_clientSocket, g_expOverlapped.m_sendMsg, 0,
 				addr_size + 16, addr_size + 16, 0, &g_expOverlapped.m_overlapped);
 			break;
 		}
@@ -171,6 +171,37 @@ void WorkerThread(HANDLE hiocp)
 		case OP_SEND:
 		{
 			delete expOverlapped;
+			break;
+		}
+		case OP_NPC:
+		{
+			g_gameServer.MoveNPC(key);
+			bool activate = false;
+
+			short sectorX = g_gameServer.GetNPC(key)->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = g_gameServer.GetNPC(key)->m_position.y / (VIEW_RANGE * 2);
+			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+			// 주변 9개의 섹터 전부 조사
+			for (int i = 0; i < 9; ++i) {
+				if (sectorX + dx[i] >= MAP_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+					sectorY + dy[i] >= MAP_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+					continue;
+				}
+
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+				for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+					if (id < MAX_USER) {
+						if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
+						if (!g_gameServer.CanSee(key, id)) continue;
+						activate = true;
+						break;
+					}
+				}
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+
+			}
+			if (activate) g_gameServer.AddTimer(key, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s);
 			break;
 		}
 		}
@@ -234,7 +265,8 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 				// 일단 나한테 전송
 				g_gameServer.GetClient(cid)->SendAddPlayer(id);
 				// 상대는 NPC가 아닐 경우 전송
-				if (id <= MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
+				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
+				else g_gameServer.WakeupNPC(id);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 		}
@@ -252,6 +284,10 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		
 		// 섹터 안에 있는 오브젝트의 ID를 담음.
 		unordered_set<int> newViewList;
+		g_gameServer.GetClient(cid)->m_viewLock.lock();
+		auto oldViewList = g_gameServer.GetClient(cid)->m_viewList;
+		g_gameServer.GetClient(cid)->m_viewLock.unlock();
+
 		short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
 		short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
 		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
@@ -285,24 +321,26 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 				// View List에 없다면 더해준다.
 				g_gameServer.GetClient(cid)->m_viewLock.unlock();
 				g_gameServer.GetClient(cid)->SendAddPlayer(playerID);
-				g_gameServer.GetClient(playerID)->SendAddPlayer(cid);
+				if (playerID < MAX_USER) g_gameServer.GetClient(playerID)->SendAddPlayer(cid);
 			}
 			else {
 				// 있다면 이동 시킨다.
 				g_gameServer.GetClient(cid)->m_viewLock.unlock();
-				if (playerID <= MAX_USER) g_gameServer.GetClient(playerID)->SendObjectInfo(cid);
+				if (playerID < MAX_USER) g_gameServer.GetClient(playerID)->SendObjectInfo(cid);
+			}
+
+			if (!oldViewList.count(playerID)) {
+				g_gameServer.GetClient(cid)->SendAddPlayer(playerID);
+				if (playerID >= MAX_USER) g_gameServer.WakeupNPC(playerID);
 			}
 		}
 		
 		// 새 View List에 제거되었는데 이전에 있던 플레이어의 정보 삭제
-		g_gameServer.GetClient(cid)->m_viewLock.lock();
-		auto oldViewList = g_gameServer.GetClient(cid)->m_viewList;
-		g_gameServer.GetClient(cid)->m_viewLock.unlock();
 
 		for (auto& playerID : oldViewList) {
 			if (!newViewList.count(playerID)) {
 				g_gameServer.GetClient(cid)->SendExitPlayer(playerID);
-				if (playerID <= MAX_USER) g_gameServer.GetClient(playerID)->SendExitPlayer(cid);
+				if (playerID < MAX_USER) g_gameServer.GetClient(playerID)->SendExitPlayer(cid);
 			}
 		}
 
