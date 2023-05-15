@@ -19,3 +19,30 @@
 게임에 사용 시 단점
 - 성능
 	. 느린 실행 속도, 가비지 컬랙션 랙
+종류
+- 기존 언어
+	. Visual Basic, C#, Java, python, LUA, XML, javascript
+- Custom
+	. LPC, UnrealScript
+
+
+스크립트 언어의 요구사항
+- 배우기 쉬울 것
+	. 쉬운 문법
+- OOP 기능 제공
+	. Object -> Living -> Monster -> Orc -> 네루바 오크
+- Multithread 기능 제공 (옵션)
+	. Multithread 환경에서의 동작 보장
+	  - Reentrant : 하나의 객체를 여러 쓰레드에서 동시에 메소드
+	    호출해도 문제 없이 실행
+	. 쓰레드별로 별도의 인터프리터 객체를 실행할 수도 있음.
+	. 멀티쓰레드 프로그래밍이 필요한 경우
+	  - 개별 객체 구현이 아니라 시스템을 구현할 경우
+
+스크립트 언어의 특징
+- LUA : 간단, 성능이 뛰어남. 가장 많이 사용
+- Python : 생산성이 높다. multithread 성능에 문제 있음
+- Java, javascript : 높은 인지도, GC로 인한 성능 저하
+- C# : 성능, C에서 호출 오버헤드가 있다. multithread 지원
+- XML : 언어가 아님 -> 최근에는 json이 대신 사용됨.
+
