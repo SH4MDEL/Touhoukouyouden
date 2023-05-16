@@ -46,3 +46,16 @@
 - C# : 성능, C에서 호출 오버헤드가 있다. multithread 지원
 - XML : 언어가 아님 -> 최근에는 json이 대신 사용됨.
 
+
+NPC Script 연동
+- 
+
+Massively Multi Virtual Machine
+- 스크립트 컨트롤되는 객체마다 하나의 가상머신
+- LUA니까 가능
+- Event별로 해당 객체의 적절한 LUA 함수 호출
+- Script에서 사용할 API를 게임서버에서 제공해 주어야 함
+	. Script언어가 실행하기 곤란한 기능들
+	. 이동, 메시지, 다른 객체 이벤트 호출
+	  주변 object 검색, 클라이언트에 명령 전달
+	  실행 시간이 많이 걸리는 기능(A*)
