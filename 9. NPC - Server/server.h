@@ -35,8 +35,6 @@ public:
 	void Move(UINT id, UCHAR direction);
 
 	shared_ptr<CLIENT> GetClient(UINT id);
-	array<shared_ptr<CLIENT>, MAX_USER>& GetClients();
-
 	shared_ptr<NPC> GetNPC(UINT id);
 
 	void AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime);
@@ -47,8 +45,9 @@ public:
 	void TimerThread(HANDLE hiocp);
 
 private:
-	array<shared_ptr<CLIENT>, MAX_USER> m_clients;
-	array<shared_ptr<NPC>, MAX_NPC> m_npcs;
+	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC> m_objects;
+	//array<shared_ptr<CLIENT>, MAX_USER> m_clients;
+	//array<shared_ptr<NPC>, MAX_NPC> m_npcs;
 
 	priority_queue<Event> m_timerQueue;
 	mutex m_timerLock;

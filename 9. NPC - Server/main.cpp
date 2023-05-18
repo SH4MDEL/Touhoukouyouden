@@ -44,8 +44,6 @@ int main()
 
 	closesocket(g_serverSocket);
 	WSACleanup();
-
-
 }
 
 void WorkerThread(HANDLE hiocp)
@@ -67,20 +65,6 @@ void WorkerThread(HANDLE hiocp)
 				cout << "GetQueuedCompletionStatus Error on client[" << key << "]\n";
 				// 접속 종료 패킷 전송
 
-				g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].lock();
-				g_sector[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].erase(key);
-				g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].unlock();
-
-				for (auto& pl : g_gameServer.GetClients()) {
-					{
-						unique_lock<mutex> lock(pl->m_mutex);
-						if (pl->m_state != CLIENT::INGAME) continue;
-					}
-					if (pl->m_id == key) continue;
-					pl->SendExitPlayer(key);
-				}
-
-
 				g_gameServer.ExitClient(key);
 				if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 				continue;
@@ -90,18 +74,6 @@ void WorkerThread(HANDLE hiocp)
 		if ((received == 0) && ((expOverlapped->m_compType == OP_RECV) || (expOverlapped->m_compType == OP_SEND))) {
 			// 접속 종료 패킷 전송
 
-			g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].lock();
-			g_sector[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].erase(key);
-			g_sectorLock[g_gameServer.GetClient(key)->m_position.y / (VIEW_RANGE * 2)][g_gameServer.GetClient(key)->m_position.x / (VIEW_RANGE * 2)].unlock();
-
-			for (auto& pl : g_gameServer.GetClients()) {
-				{
-					unique_lock<mutex> lock(pl->m_mutex);
-					if (pl->m_state != OBJECT::INGAME) continue;
-				}
-				if (pl->m_id == key) continue;
-				pl->SendExitPlayer(key);
-			}
 			g_gameServer.ExitClient(key);
 			if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 			continue;
@@ -225,6 +197,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			sendpk.type = SC_PACKET_LOGIN_CONFIRM;
 			sendpk.id = cid;
 			g_gameServer.GetClient(cid)->DoSend(&sendpk);
+			strcpy_s(g_gameServer.GetClient(cid)->m_name, pk->name);
 #ifdef NETWORK_DEBUG
 			cout << "SC_PACKET_LOGIN_CONFIRM 송신 - ID : " << (int)sendpk.id << endl;
 #endif

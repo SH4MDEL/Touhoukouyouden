@@ -3,7 +3,7 @@
 #include <windows.h>
 
 constexpr short		SERVER_PORT = 4000;
-constexpr int		BUFSIZE = 256;
+constexpr int		BUFSIZE = 1024;
 constexpr int		NAMESIZE = 20;
 
 constexpr int		MAP_HEIGHT = 2000;
@@ -51,7 +51,7 @@ struct packet
 
 struct cs_packet_login : public packet
 {
-
+	char name[NAMESIZE];
 };
 
 struct cs_packet_move : public packet
@@ -76,6 +76,7 @@ struct sc_packet_add_player : public packet
 {
 	unsigned int id;
 	Short2 coord;
+	char name[NAMESIZE];
 };
 
 struct sc_packet_object_info : public packet

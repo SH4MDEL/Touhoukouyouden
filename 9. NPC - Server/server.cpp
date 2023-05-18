@@ -2,48 +2,48 @@
 
 GameServer::GameServer()
 {
-	for (auto& client : m_clients) {
-		client = make_shared<CLIENT>();
+	for (UINT i = 0; i < MAX_USER; ++i) {
+		m_objects[i] = make_shared<CLIENT>();
 	}
-	for (auto& npc : m_npcs) {
-		npc = make_shared<NPC>();
+	for (UINT i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
+		m_objects[i] = make_shared<NPC>();
 	}
 }
 
 void GameServer::InitializeNPC()
 {
-	for (int i = MAX_USER; auto & npc : m_npcs) {
-		npc->m_id = i++;
-		//npc->m_position.x = rand() % (MAP_WIDTH);
-		//npc->m_position.y = rand() % (MAP_HEIGHT);
-		npc->m_position.x = rand() % (MAP_WIDTH);
-		npc->m_position.y = rand() % (MAP_HEIGHT);
-		npc->m_name[0] = 0;
-		npc->m_state = OBJECT::INGAME;
+	for (UINT i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
+		m_objects[i]->m_id = i;
+		m_objects[i]->m_position.x = rand() % (MAP_WIDTH);
+		m_objects[i]->m_position.y = rand() % (MAP_HEIGHT);
+		sprintf_s(m_objects[i]->m_name, "N%d", i);
+
+		m_objects[i]->m_state = OBJECT::INGAME;
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
-		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
+		g_sector[m_objects[i]->m_position.y / (VIEW_RANGE * 2)][m_objects[i]->m_position.x / (VIEW_RANGE * 2)].insert(m_objects[i]->m_id);
 	}
 }
 
 UINT GameServer::RegistClient(const SOCKET& c_socket)
 {
 	for (UINT i = 0; i < MAX_USER; ++i) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[i]);
 		{
-			unique_lock<mutex> lock{ m_clients[i]->m_mutex };
-			if (m_clients[i]->m_state != OBJECT::FREE) continue;
-			m_clients[i]->m_state = OBJECT::ALLOC;
+			unique_lock<mutex> lock{ client->m_mutex };
+			if (client->m_state != OBJECT::FREE) continue;
+			client->m_state = OBJECT::ALLOC;
 		}
-		m_clients[i]->m_id = i;
-		m_clients[i]->m_position.x = rand() % (MAP_WIDTH);
-		m_clients[i]->m_position.y = rand() % (MAP_HEIGHT);
-		m_clients[i]->m_name[0] = 0;
-		m_clients[i]->m_prevRemain = 0;
-		m_clients[i]->m_socket = c_socket;
+		client->m_id = i;
+		client->m_position.x = rand() % (MAP_WIDTH);
+		client->m_position.y = rand() % (MAP_HEIGHT);
+		client->m_name[0] = 0;
+		client->m_prevRemain = 0;
+		client->m_socket = c_socket;
 
-		g_sectorLock[m_clients[i]->m_position.y / (VIEW_RANGE * 2)][m_clients[i]->m_position.x / (VIEW_RANGE * 2)].lock();
-		g_sector[m_clients[i]->m_position.y / (VIEW_RANGE * 2)][m_clients[i]->m_position.x / (VIEW_RANGE * 2)].insert(i);
-		g_sectorLock[m_clients[i]->m_position.y / (VIEW_RANGE * 2)][m_clients[i]->m_position.x / (VIEW_RANGE * 2)].unlock();
+		g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].lock();
+		g_sector[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].insert(i);
+		g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].unlock();
 
 		return i;
 	}
@@ -52,30 +52,40 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 
 void GameServer::ExitClient(UINT id)
 {
-	closesocket(m_clients[id]->m_socket);
-	{
-		unique_lock<mutex> stateLock{ m_clients[id]->m_mutex };
-		m_clients[id]->m_state = CLIENT::FREE;
+	auto exitClient = static_pointer_cast<CLIENT>(m_objects[id]);
+
+	g_sectorLock[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].lock();
+	g_sector[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].erase(id);
+	g_sectorLock[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].unlock();
+
+	for (UINT i = 0; i < MAX_USER; ++i) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[i]);
+		{
+			unique_lock<mutex> lock(client->m_mutex);
+			if (client->m_state != OBJECT::INGAME) continue;
+		}
+		if (client->m_id == id) continue;
+		client->SendExitPlayer(id);
 	}
-	unique_lock<mutex> viewLock{ m_clients[id]->m_viewLock };
-	m_clients[id]->m_viewList.clear();
+
+	closesocket(exitClient->m_socket);
+	{
+		unique_lock<mutex> stateLock{ exitClient->m_mutex };
+		exitClient->m_state = CLIENT::FREE;
+	}
+	unique_lock<mutex> viewLock{ exitClient->m_viewLock };
+	exitClient->m_viewList.clear();
 }
 
 Short2 GameServer::GetPlayerPosition(UINT id)
 {
-	return Short2{ m_clients[id]->m_position.x, m_clients[id]->m_position.y };
+	return Short2{ m_objects[id]->m_position.x, m_objects[id]->m_position.y };
 }
 
 BOOL GameServer::CanSee(UINT id1, UINT id2)
 {
-	Short2 position1; Short2 position2;
-	if (id1 < MAX_USER) position1 = m_clients[id1]->m_position;
-	else position1 = m_npcs[id1 - MAX_USER]->m_position;
-	if (id2 < MAX_USER) position2 = m_clients[id2]->m_position;
-	else position2 = m_npcs[id2 - MAX_USER]->m_position;
-
-	if (std::abs(position1.x - position2.x) > VIEW_RANGE) return false;
-	return std::abs(position1.y - position2.y) <= VIEW_RANGE;
+	if (std::abs(m_objects[id1]->m_position.x - m_objects[id2]->m_position.x) > VIEW_RANGE) return false;
+	return std::abs(m_objects[id1]->m_position.y - m_objects[id2]->m_position.y) <= VIEW_RANGE;
 }
 
 void GameServer::Move(UINT id, UCHAR direction)
@@ -87,7 +97,7 @@ void GameServer::Move(UINT id, UCHAR direction)
 	if (to.x > MAP_WIDTH || to.x < 0 || to.y > MAP_HEIGHT || to.y < 0) {
 		return;
 	}
-	m_clients[id]->m_position = to;
+	m_objects[id]->m_position = to;
 
 	// 만약 섹터의 위치가 바뀌었을 경우
 	if ((from.x / (VIEW_RANGE * 2) != to.x / (VIEW_RANGE * 2)) ||
@@ -114,17 +124,12 @@ void GameServer::Move(UINT id, UCHAR direction)
 
 shared_ptr<CLIENT> GameServer::GetClient(UINT id)
 {
-	return m_clients[id];
-}
-
-array<shared_ptr<CLIENT>, MAX_USER>& GameServer::GetClients()
-{
-	return m_clients;
+	return static_pointer_cast<CLIENT>(m_objects[id]);
 }
 
 shared_ptr<NPC> GameServer::GetNPC(UINT id)
 {
-	return m_npcs[id - MAX_USER];
+	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
 void GameServer::AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime)
@@ -141,10 +146,11 @@ void GameServer::WakeupNPC(UINT id)
 
 void GameServer::MoveNPC(UINT id)
 {
+	auto npc = static_pointer_cast<NPC>(m_objects[id]);
 	unordered_set<int> viewList;
 	{
-		short sectorX = m_npcs[id - MAX_USER]->m_position.x / (VIEW_RANGE * 2);
-		short sectorY = m_npcs[id - MAX_USER]->m_position.y / (VIEW_RANGE * 2);
+		short sectorX = npc->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = npc->m_position.y / (VIEW_RANGE * 2);
 		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 		// 주변 9개의 섹터 전부 조사
@@ -157,7 +163,7 @@ void GameServer::MoveNPC(UINT id)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (m_clients[cid]->m_state != OBJECT::INGAME) continue;
+				if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
 				if (CanSee(id, cid)) viewList.insert(cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
@@ -165,7 +171,7 @@ void GameServer::MoveNPC(UINT id)
 	}
 
 	// 이동 처리
-	Short2 from = m_npcs[id - MAX_USER]->m_position;
+	Short2 from = npc->m_position;
 	Short2 d;
 	switch (rand() % 4)
 	{
@@ -179,7 +185,7 @@ void GameServer::MoveNPC(UINT id)
 	if (to.x > MAP_WIDTH || to.x < 0 || to.y > MAP_HEIGHT || to.y < 0) {
 		return;
 	}
-	m_npcs[id - MAX_USER]->m_position = to;
+	npc->m_position = to;
 
 	// 만약 섹터의 위치가 바뀌었을 경우
 	if ((from.x / (VIEW_RANGE * 2) != to.x / (VIEW_RANGE * 2)) ||
@@ -206,8 +212,8 @@ void GameServer::MoveNPC(UINT id)
 
 	unordered_set<int> newViewList;
 	{
-		short sectorX = m_npcs[id - MAX_USER]->m_position.x / (VIEW_RANGE * 2);
-		short sectorY = m_npcs[id - MAX_USER]->m_position.y / (VIEW_RANGE * 2);
+		short sectorX = npc->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = npc->m_position.y / (VIEW_RANGE * 2);
 		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 		// 주변 9개의 섹터 전부 조사
@@ -220,7 +226,7 @@ void GameServer::MoveNPC(UINT id)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (m_clients[cid]->m_state != OBJECT::INGAME) continue;
+				if (npc->m_state != OBJECT::INGAME) continue;
 				if (CanSee(id, cid)) newViewList.insert(cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
@@ -229,23 +235,25 @@ void GameServer::MoveNPC(UINT id)
 
 	// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
 	for (auto& cid : newViewList) {
-		m_clients[cid]->m_viewLock.lock();
-		if (!m_clients[cid]->m_viewList.count(id)) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[cid]);
+		client->m_viewLock.lock();
+		if (!client->m_viewList.count(id)) {
 			// View List에 없다면 더해준다.
-			m_clients[cid]->m_viewLock.unlock();
-			m_clients[cid]->SendAddPlayer(id);
+			client->m_viewLock.unlock();
+			client->SendAddPlayer(id);
 		}
 		else {
 			// 있다면 이동 시킨다.
-			m_clients[cid]->m_viewLock.unlock();
-			m_clients[cid]->SendObjectInfo(id);
+			client->m_viewLock.unlock();
+			client->SendObjectInfo(id);
 		}
 	}
 
 	// 새 View List에선 제거되었는데 이전에 있던 플레이어의 정보 삭제
 	for (auto& cid : viewList) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[cid]);
 		if (!newViewList.count(cid)) {
-			m_clients[cid]->SendExitPlayer(id);
+			client->SendExitPlayer(id);
 		}
 	}
 }

@@ -22,11 +22,14 @@ int main()
 
 	InitInstance();
 
-	g_window = make_shared<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Single Thread IOCP");
+	g_window = make_shared<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "NPC");
 
     cs_packet_login packet;
     packet.size = sizeof(cs_packet_login);
     packet.type = CS_PACKET_LOGIN;
+    string player_name{ "PL" };
+    player_name += to_string(GetCurrentProcessId());
+    strcpy_s(packet.name, player_name.c_str());
     Send(&packet);
 #ifdef NETWORK_DEBUG
     cout << "CS_PACKET_LOGIN 송신" << endl;
@@ -132,7 +135,7 @@ void ProcessPacket(char* buf)
     {
         sc_packet_add_player* pk = reinterpret_cast<sc_packet_add_player*>(buf);
         MainScene* scene = (MainScene*)g_gameFramework.GetScene();
-        scene->AddPlayer(pk->id, pk->coord);
+        scene->AddPlayer(pk->id, pk->coord, pk->name);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_ADD_PLAYER 수신" << endl;
 #endif

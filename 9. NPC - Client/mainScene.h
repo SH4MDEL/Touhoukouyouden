@@ -18,7 +18,7 @@ public:
 	
 	void OnProcessingKeyboardMessage(sf::Event inputEvent) override;
 
-	void AddPlayer(int id, Short2 position) override;
+	void AddPlayer(int id, Short2 position, const char* name) override;
 	void ExitPlayer(int id) override;
 
 	void Move(INT id, Short2 position);

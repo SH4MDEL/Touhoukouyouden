@@ -91,18 +91,20 @@ void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
 	}
 }
 
-void MainScene::AddPlayer(int id, Short2 position)
+void MainScene::AddPlayer(int id, Short2 position, const char* name)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Piece>();
 		m_avatar->SetTexture(m_pieceTexture, 0, 0, 64, 64);
 		m_avatar->SetPosition(position);
+		m_avatar->SetName(name);
 		g_leftX = position.x - 7; g_topY = position.y - 7;
 	}
 	else {
 		m_players[id] = make_shared<Piece>();
 		m_players[id]->SetTexture(m_pieceTexture, 0, 0, 64, 64);
 		m_players[id]->SetPosition(position);
+		m_players[id]->SetName(name);
 	}
 }
 

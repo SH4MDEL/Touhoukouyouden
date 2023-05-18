@@ -50,6 +50,7 @@ void CLIENT::SendAddPlayer(INT id)
 	else {
 		sendpk.coord = g_gameServer.GetNPC((UINT)id)->m_position;
 	}
+	strcpy_s(sendpk.name, g_gameServer.GetClient((UINT)id)->m_name);
 	DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
 	cout << "SC_PACKET_ADD_PLAYER ¼Û½Å - ID : " << id << ", x : " << sendpk.coord.x << ", y : " << sendpk.coord.y << endl;

@@ -14,7 +14,9 @@ void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
 	float ry = (m_position.y - g_topY) * TILE_WIDTH;
 	m_sprite.setPosition(rx, ry);
 	window->draw(m_sprite);
-	//window->draw(m_name);
+	auto size = m_name.getGlobalBounds();
+	m_name.setPosition(rx + 32 - size.width / 2, ry - 20);
+	window->draw(m_name);
 }
 
 void Piece::SetPosition(Short2 position)
