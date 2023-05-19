@@ -46,11 +46,8 @@ public:
 
 private:
 	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC> m_objects;
-	//array<shared_ptr<CLIENT>, MAX_USER> m_clients;
-	//array<shared_ptr<NPC>, MAX_NPC> m_npcs;
 
-	priority_queue<Event> m_timerQueue;
-	mutex m_timerLock;
+	concurrency::concurrent_priority_queue<Event> m_timerQueue;
 };
 
 

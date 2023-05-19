@@ -134,7 +134,6 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 
 void GameServer::AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime)
 {
-	unique_lock<mutex> timerLock{ m_timerLock };
 	m_timerQueue.push( Event{id, type, executeTime} );
 }
 
@@ -262,24 +261,25 @@ void GameServer::TimerThread(HANDLE hiocp)
 {
 	while (true)
 	{
-		m_timerLock.lock();
-		if (m_timerQueue.empty()) {
-			m_timerLock.unlock();
-			this_thread::sleep_for(10ms);
+		auto currentTime = chrono::system_clock::now();
+		Event ev;
+		if (m_timerQueue.try_pop(ev)) {
+			if (ev.m_executeTime > currentTime) {
+				m_timerQueue.push(ev);
+				this_thread::sleep_for(1ms);
+				continue;
+			}
+			switch (ev.m_type)
+			{
+			case Event::RANDOM_MOVE:
+				EXP_OVER* over = new EXP_OVER;
+				over->m_compType = COMP_TYPE::OP_NPC;
+				// type 제외하고 초기화할 필요 없음
+				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+				break;
+			}
 			continue;
 		}
-		auto timerEvent = m_timerQueue.top();
-		if (timerEvent.m_executeTime > chrono::system_clock::now()) {
-			m_timerLock.unlock();
-			this_thread::sleep_for(10ms);
-			continue;
-		}
-		m_timerQueue.pop();
-
-		m_timerLock.unlock();
-		EXP_OVER* over = new EXP_OVER;
-		over->m_compType = COMP_TYPE::OP_NPC;
-		// type 제외하고 초기화할 필요 없음
-		PostQueuedCompletionStatus(hiocp, 1, timerEvent.m_id, &over->m_overlapped);
+		this_thread::sleep_for(1ms);
 	}
 }

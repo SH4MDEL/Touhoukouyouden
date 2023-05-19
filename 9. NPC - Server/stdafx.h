@@ -20,6 +20,7 @@
 #include <unordered_set>
 #include <random>
 #include <memory>
+#include <concurrent_priority_queue.h>
 using namespace std;
 
 #define endl "\n"
