@@ -231,7 +231,7 @@ void WakeUpNPC(int npc_id, int waker)
 	exover->_comp_type = OP_AI_HELLO;		// 주위 플레이어가 이동했으니까 AI를 작동해라.
 	exover->_ai_target_obj = waker;
 	PostQueuedCompletionStatus(h_iocp, 1, npc_id, &exover->_over);
-
+		
 	if (clients[npc_id]._is_active) return;
 	bool old_state = false;
 	if (false == atomic_compare_exchange_strong(&clients[npc_id]._is_active, &old_state, true))
@@ -554,7 +554,7 @@ void InitializeNPC()
 		auto L = clients[i]._L = luaL_newstate();
 		luaL_openlibs(L);
 		luaL_loadfile(L, "npc.lua");
-		lua_pcall(L, 0, 0, 0);
+		lua_pcall(L, 0, 0, 0);	
 
 		lua_getglobal(L, "set_uid");
 		lua_pushnumber(L, i);
