@@ -3,11 +3,35 @@
 #include <windows.h>  
 #include <stdio.h>  
 #include <sqlext.h>  
+#include <locale.h>
 
-constexpr int NAME_LEN = 15;
+constexpr int NAME_LEN = 30;
 
-void show_error() {
-    printf("error\n");
+/************************************************************************
+/* HandleDiagnosticRecord : display error/warning information
+/*
+/* Parameters:
+/* hHandle ODBC handle
+/* hType Type of handle (SQL_HANDLE_STMT, SQL_HANDLE_ENV, SQL_HANDLE_DBC)
+/* RetCode Return code of failing command
+/************************************************************************/
+void show_error(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode)
+{
+    SQLSMALLINT iRec = 0;
+    SQLINTEGER iError;
+    WCHAR wszMessage[1000];
+    WCHAR wszState[SQL_SQLSTATE_SIZE + 1];
+    if (RetCode == SQL_INVALID_HANDLE) {
+        fwprintf(stderr, L"Invalid handle!\n");
+        return;
+    }
+    while (SQLGetDiagRec(hType, hHandle, ++iRec, wszState, &iError, wszMessage,
+        (SQLSMALLINT)(sizeof(wszMessage) / sizeof(WCHAR)), (SQLSMALLINT*)NULL) == SQL_SUCCESS) {
+        // Hide data truncated..
+        if (wcsncmp(wszState, L"01004", 5)) {
+            fwprintf(stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError);
+        }
+    }
 }
 
 int main() {
@@ -18,6 +42,9 @@ int main() {
     SQLWCHAR szName[NAME_LEN];
     SQLINTEGER player_id, player_level;
     SQLLEN cbName = 0, cb_id = 0, cb_level = 0;
+
+    setlocale(LC_ALL, "korean");
+
 
     // Allocate environment handle  
     retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
@@ -41,19 +68,23 @@ int main() {
                 if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
                     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
-                    retcode = SQLExecDirect(hstmt, (SQLWCHAR*)L"SELECT player_id, player_name, player_level FROM player_table", SQL_NTS);
+                    // DB에서 데이터를 읽어 옴.
+                    //retcode = SQLExecDirect(hstmt, 
+                    //    (SQLWCHAR*)L"SELECT player_id, player_name, player_level FROM player_table WHERE player_level > 20", SQL_NTS);
+                    retcode = SQLExecDirect(hstmt,
+                        (SQLWCHAR*)L"EXEC get_high_level 20", SQL_NTS);
                     if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
 
                         // Bind columns 1, 2, and 3  
-                        retcode = SQLBindCol(hstmt, 1, SQL_C_WCHAR, &sCustID, 100, &cbCustID);
+                        retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &player_id, 10, &cb_id);
                         retcode = SQLBindCol(hstmt, 2, SQL_C_WCHAR, szName, NAME_LEN, &cbName);
-                        retcode = SQLBindCol(hstmt, 3, SQL_C_WCHAR, szPhone, PHONE_LEN, &cbPhone);
+                        retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &player_level, 10, &cb_level);
 
                         // Fetch and print each row of data. On an error, display a message and exit.  
                         for (int i = 0; ; i++) {
-                            retcode = SQLFetch(hstmt);
+                            retcode = SQLFetch(hstmt); // 데이터를 하나씩 꺼냄
                             if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO)
-                                show_error();
+                                show_error(hstmt, SQL_HANDLE_STMT, retcode);
                             if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
                             {
                                 //replace wprintf with printf
@@ -61,11 +92,14 @@ int main() {
                                 //warning C4477: 'wprintf' : format string '%S' requires an argument of type 'char *'
                                 //but variadic argument 2 has type 'SQLWCHAR *'
                                 //wprintf(L"%d: %S %S %S\n", i + 1, sCustID, szName, szPhone);  
-                                printf("%d: %ls %ls %ls\n", i + 1, sCustID, szName, szPhone);
+                                printf("%d: ID: %d, Name: %ls, Level: %d\n", i + 1, player_id, szName, player_level);
                             }
                             else
                                 break;
                         }
+                    }
+                    else {
+                        show_error(hstmt, SQL_HANDLE_STMT, retcode);
                     }
 
                     // Process data  
