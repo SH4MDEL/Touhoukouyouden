@@ -152,16 +152,16 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
-void GameServer::AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg)
+void GameServer::AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
 {
-	m_timerQueue.push( Event{id, type, executeTime, eventMsg} );
+	m_timerQueue.push( Event{id, type, executeTime, eventMsg, targetid } );
 }
 
 void GameServer::WakeupNPC(UINT id, UINT waker)
 {
 	EXP_OVER* expOverlapped = new EXP_OVER;
 	expOverlapped->m_compType = OP_NPC_HELLO;
-	expOverlapped->m_eventMsg = waker;
+	memcpy(expOverlapped->m_sendMsg, &waker, sizeof(waker));
 	PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
 
 	auto npc = static_pointer_cast<NPC>(m_objects[id]);
@@ -169,7 +169,7 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	bool oldState = false;
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
-	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3 });
+	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
 }
 
 void GameServer::MoveNPC(UINT id)
@@ -304,7 +304,9 @@ void GameServer::TimerThread(HANDLE hiocp)
 			case Event::RANDOM_MOVE:
 				EXP_OVER* over = new EXP_OVER;
 				over->m_compType = COMP_TYPE::OP_NPC_MOVE;
-				over->m_eventMsg = ev.m_eventMsg;
+				memcpy(over->m_sendMsg, &ev.m_eventMsg, sizeof(ev.m_eventMsg));
+				memcpy(over->m_sendMsg + sizeof(ev.m_eventMsg), &ev.m_targetid, sizeof(ev.m_targetid));
+				
 				// type 제외하고 초기화할 필요 없음
 				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
 				break;

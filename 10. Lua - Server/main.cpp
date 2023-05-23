@@ -174,15 +174,17 @@ void WorkerThread(HANDLE hiocp)
 
 			}
 			if (activate) {
-				int moveCount = --expOverlapped->m_eventMsg;
+				int* sendMsg = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
+				int* targetid = reinterpret_cast<int*>(expOverlapped->m_sendMsg + sizeof(UINT));
+				int moveCount = --(*sendMsg);
 				if (moveCount > 0) {
-					g_gameServer.AddTimer(key, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount);
+					g_gameServer.AddTimer(key, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
 				}
 				else {
 					EXP_OVER* expOverlapped = new EXP_OVER;
-					expOverlapped->m_compType = OP_NPC_HELLO;
-					//expOverlapped->m_eventMsg = waker;
-					//PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
+					expOverlapped->m_compType = OP_NPC_BYE;
+					memcpy(expOverlapped->m_sendMsg, targetid, sizeof(UINT));
+					PostQueuedCompletionStatus(g_iocp, 1, key, &expOverlapped->m_overlapped);
 				}
 			}
 			else {
@@ -193,10 +195,11 @@ void WorkerThread(HANDLE hiocp)
 		}
 		case OP_NPC_HELLO:
 		{
+			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
 			npc->m_luaLock.lock();
 			lua_getglobal(npc->m_luaState, "event_player_move");
-			lua_pushnumber(npc->m_luaState, expOverlapped->m_eventMsg);
+			lua_pushnumber(npc->m_luaState, *cid);
 			lua_pcall(npc->m_luaState, 1, 0, 0);
 			lua_pop(npc->m_luaState, 1);
 			npc->m_luaLock.unlock();
@@ -205,10 +208,11 @@ void WorkerThread(HANDLE hiocp)
 		}
 		case OP_NPC_BYE:
 		{
+			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
 			npc->m_luaLock.lock();
 			lua_getglobal(npc->m_luaState, "event_player_leave");
-			lua_pushnumber(npc->m_luaState, expOverlapped->m_eventMsg);
+			lua_pushnumber(npc->m_luaState, *cid);
 			lua_pcall(npc->m_luaState, 1, 0, 0);
 			lua_pop(npc->m_luaState, 1);
 			npc->m_luaLock.unlock();

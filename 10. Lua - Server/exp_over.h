@@ -15,7 +15,5 @@ public:
 	WSABUF m_wsaBuf;
 	char m_sendMsg[BUFSIZE];
 	COMP_TYPE m_compType;
-
-	int m_eventMsg;
 };
 

@@ -11,6 +11,7 @@ struct Event
 	Type m_type;
 	chrono::system_clock::time_point m_executeTime;
 	INT m_eventMsg;
+	UINT m_targetid;
 
 	constexpr bool operator<(const Event& rhs) const {
 		return m_executeTime > rhs.m_executeTime;
@@ -38,7 +39,7 @@ public:
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);
 
-	void AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg);
+	void AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid);
 	void WakeupNPC(UINT id, UINT waker);
 
 	void MoveNPC(UINT id);
