@@ -27,7 +27,7 @@ const static int MAX_BUFF_SIZE = 255;
 
 #pragma comment (lib, "ws2_32.lib")
 
-#include "..\9. NPC - Server\protocol.h"
+#include "..\10. Lua - Server\protocol.h"
 
 HANDLE g_hiocp;
 
@@ -157,6 +157,7 @@ void ProcessPacket(int ci, unsigned char packet[])
 		break;
 	}
 	case SC_PACKET_EXIT_PLAYER: break;
+	case SC_PACKET_CHAT: break;
 	case SC_PACKET_LOGIN_CONFIRM:
 	{
 		g_clients[ci].connected = true;

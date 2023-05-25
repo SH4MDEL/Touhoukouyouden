@@ -34,14 +34,17 @@ public:
 
 	Short2 GetPlayerPosition(UINT id);
 	BOOL CanSee(UINT id1, UINT id2);
+	BOOL IsSamePosition(UINT id1, UINT id2);
 	void Move(UINT id, UCHAR direction);
+
+	unordered_set<int>& GetObjectsFromNearSector(INT id);
 
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);
 
 	void AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid);
 	void WakeupNPC(UINT id, UINT waker);
-
+	void SleepNPC(UINT id);
 	void MoveNPC(UINT id);
 
 	void TimerThread(HANDLE hiocp);

@@ -108,6 +108,12 @@ BOOL GameServer::CanSee(UINT id1, UINT id2)
 	return std::abs(m_objects[id1]->m_position.y - m_objects[id2]->m_position.y) <= VIEW_RANGE;
 }
 
+BOOL GameServer::IsSamePosition(UINT id1, UINT id2)
+{
+	return (m_objects[id1]->m_position.x == m_objects[id2]->m_position.x &&
+		m_objects[id1]->m_position.y == m_objects[id2]->m_position.y);
+}
+
 void GameServer::Move(UINT id, UCHAR direction)
 {
 	Short2 from = GetPlayerPosition(id);
@@ -142,6 +148,11 @@ void GameServer::Move(UINT id, UCHAR direction)
 	}
 }
 
+unordered_set<int>& GameServer::GetObjectsFromNearSector(INT id)
+{
+
+}
+
 shared_ptr<CLIENT> GameServer::GetClient(UINT id)
 {
 	return static_pointer_cast<CLIENT>(m_objects[id]);
@@ -170,6 +181,14 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
 	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
+}
+
+void GameServer::SleepNPC(UINT id)
+{
+	auto npc = static_pointer_cast<NPC>(m_objects[id]);
+	if (!npc->m_isActive) return;
+	bool oldState = true;
+	atomic_compare_exchange_strong(&npc->m_isActive, &oldState, false);
 }
 
 void GameServer::MoveNPC(UINT id)
@@ -343,6 +362,6 @@ int GameServer::Lua_SendMessage(lua_State* state)
 	lua_pop(state, 4);
 
 	auto client = static_pointer_cast<CLIENT>(m_objects[user]);
-	client->SendChat(user, message);
+	client->SendChat(npc, message);
 	return 0;
 }

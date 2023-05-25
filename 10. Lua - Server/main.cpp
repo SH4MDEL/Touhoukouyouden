@@ -185,6 +185,7 @@ void WorkerThread(HANDLE hiocp)
 					expOverlapped->m_compType = OP_NPC_BYE;
 					memcpy(expOverlapped->m_sendMsg, targetid, sizeof(UINT));
 					PostQueuedCompletionStatus(g_iocp, 1, key, &expOverlapped->m_overlapped);
+					g_gameServer.SleepNPC(key);
 				}
 			}
 			else {
@@ -282,7 +283,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 				g_gameServer.GetClient(cid)->SendAddPlayer(id);
 				// 상대는 NPC가 아닐 경우 전송
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
-				else g_gameServer.WakeupNPC(id, cid);
+				else if (g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 		}
@@ -347,16 +348,25 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 			if (!oldViewList.count(id)) {
 				g_gameServer.GetClient(cid)->SendAddPlayer(id);
-				if (id >= MAX_USER) g_gameServer.WakeupNPC(id, cid);
+				//if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
 			}
 		}
 		
 		// 새 View List에 제거되었는데 이전에 있던 플레이어의 정보 삭제
-
 		for (auto& id : oldViewList) {
 			if (!newViewList.count(id)) {
 				g_gameServer.GetClient(cid)->SendExitPlayer(id);
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendExitPlayer(cid);
+			}
+		}
+
+		// 위치가 같은 NPC가 있는지 검사
+		g_gameServer.GetClient(cid)->m_viewLock.lock();
+		auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
+		g_gameServer.GetClient(cid)->m_viewLock.unlock();
+		for (auto& id : npcCheckingViewList) {
+			if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
+				g_gameServer.WakeupNPC(id, cid);
 			}
 		}
 

@@ -39,6 +39,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "9. NPC - Client", "9. NPC -
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "10. Lua - Server", "10. Lua - Server\10. Lua - Server.vcxproj", "{CB1BCC67-2CE2-4E40-8675-89C40EEDB39B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "10. Lua - Client", "10. Lua - Client\10. Lua - Client.vcxproj", "{288284DF-76E0-4F3C-B362-866BE54D5B88}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -191,6 +193,14 @@ Global
 		{CB1BCC67-2CE2-4E40-8675-89C40EEDB39B}.Release|x64.Build.0 = Release|x64
 		{CB1BCC67-2CE2-4E40-8675-89C40EEDB39B}.Release|x86.ActiveCfg = Release|Win32
 		{CB1BCC67-2CE2-4E40-8675-89C40EEDB39B}.Release|x86.Build.0 = Release|Win32
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Debug|x64.ActiveCfg = Debug|x64
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Debug|x64.Build.0 = Debug|x64
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Debug|x86.ActiveCfg = Debug|Win32
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Debug|x86.Build.0 = Debug|Win32
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Release|x64.ActiveCfg = Release|x64
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Release|x64.Build.0 = Release|x64
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Release|x86.ActiveCfg = Release|Win32
+		{288284DF-76E0-4F3C-B362-866BE54D5B88}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
