@@ -360,7 +360,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			}
 		}
 
-		// 이동한 자리에 NPC가 있는지 검사
+		// 위치가 같은 NPC가 있는지 검사
 		g_gameServer.GetClient(cid)->m_viewLock.lock();
 		auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
 		g_gameServer.GetClient(cid)->m_viewLock.unlock();

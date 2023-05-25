@@ -175,13 +175,11 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	memcpy(expOverlapped->m_sendMsg, &waker, sizeof(waker));
 	PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
 
-	// 이미 활동중인 NPC라면 return
 	auto npc = static_pointer_cast<NPC>(m_objects[id]);
 	if (npc->m_isActive) return;
 	bool oldState = false;
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
-	// 아니라면 타이머 쓰레드에 이동 명령 통지
 	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
 }
 
