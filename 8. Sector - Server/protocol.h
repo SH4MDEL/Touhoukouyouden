@@ -3,11 +3,11 @@
 #include <windows.h>
 
 constexpr short		SERVER_PORT = 4000;
-constexpr int		BUFSIZE = 256;
+constexpr int		BUFSIZE = 1024;
 constexpr int		NAMESIZE = 20;
 
-constexpr int		MAP_HEIGHT = 400;
-constexpr int		MAP_WIDTH = 400;
+constexpr int		MAP_HEIGHT = 2000;
+constexpr int		MAP_WIDTH = 2000;
 
 constexpr char		CS_PACKET_LOGIN = 1;
 constexpr char		CS_PACKET_MOVE = 2;

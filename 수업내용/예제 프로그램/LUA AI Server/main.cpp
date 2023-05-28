@@ -7,6 +7,7 @@
 #include <mutex>
 #include <unordered_set>
 #include <concurrent_priority_queue.h>
+#include <random>
 #include "protocol.h"
 
 #include "include/lua.hpp"
@@ -400,6 +401,15 @@ void do_npc_random_move(int npc_id)
 	}
 }
 
+void error(lua_State* L, const char* fmt, ...) {
+	va_list argp;
+	va_start(argp, fmt);
+	vfprintf(stderr, fmt, argp);
+	va_end(argp);
+	lua_close(L);
+	exit(EXIT_FAILURE);
+}
+
 void worker_thread(HANDLE h_iocp)
 {
 	while (true) {
@@ -498,7 +508,9 @@ void worker_thread(HANDLE h_iocp)
 			auto L = clients[key]._L;
 			lua_getglobal(L, "event_player_move");
 			lua_pushnumber(L, ex_over->_ai_target_obj);
-			lua_pcall(L, 1, 0, 0);
+			if (0 != lua_pcall(L, 1, 0, 0))
+				error(L, "error running function ¡®XXX¡¯: %s\n", lua_tostring(L, -1));
+
 			lua_pop(L, 1);
 			clients[key]._ll.unlock();
 			delete ex_over;
@@ -511,8 +523,7 @@ void worker_thread(HANDLE h_iocp)
 
 int API_get_x(lua_State* L)
 {
-	int user_id =
-		(int)lua_tointeger(L, -1);
+	int user_id = (int)lua_tointeger(L, -1);
 	lua_pop(L, 2);
 	int x = clients[user_id].x;
 	lua_pushnumber(L, x);
@@ -521,8 +532,7 @@ int API_get_x(lua_State* L)
 
 int API_get_y(lua_State* L)
 {
-	int user_id =
-		(int)lua_tointeger(L, -1);
+	int user_id = (int)lua_tointeger(L, -1);
 	lua_pop(L, 2);
 	int y = clients[user_id].y;
 	lua_pushnumber(L, y);
@@ -541,25 +551,31 @@ int API_SendMessage(lua_State* L)
 	return 0;
 }
 
+mt19937		g_randomEngine;
+uniform_int_distribution<INT> dis{ 0, 2000 };
+
 void InitializeNPC()
 {
 	cout << "NPC intialize begin.\n";
 	for (int i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
-		clients[i].x = rand() % W_WIDTH;
-		clients[i].y = rand() % W_HEIGHT;
+		clients[i].x = dis(g_randomEngine);
+		clients[i].y = dis(g_randomEngine);
 		clients[i]._id = i;
 		sprintf_s(clients[i]._name, "NPC%d", i);
 		clients[i]._state = ST_INGAME;
 
 		auto L = clients[i]._L = luaL_newstate();
+		lua_gc(L, LUA_GCSTOP);
 		luaL_openlibs(L);
 		luaL_loadfile(L, "npc.lua");
-		lua_pcall(L, 0, 0, 0);	
+		if (0 != lua_pcall(L, 0, 0, 0))
+			error(L, "error running function ¡®XXX¡¯: %s\n", lua_tostring(L, -1));
 
 		lua_getglobal(L, "set_uid");
 		lua_pushnumber(L, i);
-		lua_pcall(L, 1, 0, 0);
-		// lua_pop(L, 1);// eliminate set_uid from stack after call
+		if (0 != lua_pcall(L, 1, 0, 0))
+			error(L, "error running function ¡®XXX¡¯: %s\n", lua_tostring(L, -1));
+		//lua_pop(L, 1);// eliminate set_uid from stack after call
 
 		lua_register(L, "API_SendMessage", API_SendMessage);
 		lua_register(L, "API_get_x", API_get_x);

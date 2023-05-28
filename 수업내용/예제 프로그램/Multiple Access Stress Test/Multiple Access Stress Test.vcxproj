@@ -133,6 +133,9 @@
   <ItemGroup>
     <ClInclude Include="network.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\LUA AI Server\npc.lua" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
