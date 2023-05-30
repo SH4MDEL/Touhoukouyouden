@@ -511,7 +511,7 @@ void worker_thread(HANDLE h_iocp)
 			if (0 != lua_pcall(L, 1, 0, 0))
 				error(L, "error running function ¡®XXX¡¯: %s\n", lua_tostring(L, -1));
 
-			lua_pop(L, 1);
+			//lua_pop(L, 1);
 			clients[key]._ll.unlock();
 			delete ex_over;
 		}
@@ -565,7 +565,7 @@ void InitializeNPC()
 		clients[i]._state = ST_INGAME;
 
 		auto L = clients[i]._L = luaL_newstate();
-		lua_gc(L, LUA_GCSTOP);
+		//lua_gc(L, LUA_GCSTOP);
 		luaL_openlibs(L);
 		luaL_loadfile(L, "npc.lua");
 		if (0 != lua_pcall(L, 0, 0, 0))
