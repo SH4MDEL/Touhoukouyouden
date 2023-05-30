@@ -1,12 +1,33 @@
 #include "mainScene.h"
 
-MainScene::MainScene(Tag tag) : Scene(tag)
+MainScene::MainScene()
 {
+	wcout.imbue(locale("korean"));
+	sf::Socket::Status status = g_socket.connect("127.0.0.1", SERVER_PORT);
+	g_socket.setBlocking(false);
+
+	if (status != sf::Socket::Done) {
+		wcout << L"서버와 연결할 수 없습니다.\n";
+		exit(-1);
+	}
+
+	cs_packet_login packet;
+	packet.size = sizeof(cs_packet_login);
+	packet.type = CS_PACKET_LOGIN;
+	string player_name{ "PL" };
+	player_name += to_string(GetCurrentProcessId());
+	strcpy_s(packet.name, player_name.c_str());
+	Send(&packet);
+#ifdef NETWORK_DEBUG
+	cout << "CS_PACKET_LOGIN 송신" << endl;
+#endif
+
+	BuildObjects();
 }
 
-void MainScene::OnCreate()
+MainScene::~MainScene()
 {
-	BuildObjects();
+	DestroyObject();
 }
 
 void MainScene::BuildObjects()
@@ -18,20 +39,17 @@ void MainScene::BuildObjects()
 	m_pieceTexture->loadFromFile("..\\Resource\\Piece.png");
 
 	m_whiteTile = make_shared<Object>();
-	m_whiteTile->SetTexture(m_boardTexture, 0, 0, TILE_WIDTH, TILE_WIDTH);
+	m_whiteTile->SetSpriteTexture(m_boardTexture, 0, 0, TILE_WIDTH, TILE_WIDTH);
 	m_blackTile = make_shared<Object>();
-	m_blackTile->SetTexture(m_boardTexture, 129, 0, TILE_WIDTH, TILE_WIDTH);
-}
-
-
-void MainScene::OnDestroy()
-{
-	DestroyObject();
+	m_blackTile->SetSpriteTexture(m_boardTexture, 129, 0, TILE_WIDTH, TILE_WIDTH);
 }
 
 void MainScene::DestroyObject()
 {
 	m_avatar.reset();
+	for (auto& player : m_players) {
+		player.second.reset();
+	}
 	m_players.clear();
 }
 
@@ -50,12 +68,12 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 			int tileY = j + g_topY;
 			if (tileX < 0 || tileX > MAP_WIDTH || tileY < 0 || tileY > MAP_HEIGHT) continue;
 			if (0 == (tileX / 3 + tileY / 3) % 2) {
-				m_whiteTile->SetPosition({ (short)(TILE_WIDTH * i), (short)(TILE_WIDTH * j) });
+				m_whiteTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
 				m_whiteTile->Render(window);
 			}
 			else
 			{
-				m_blackTile->SetPosition({ (short)(TILE_WIDTH * i), (short)(TILE_WIDTH * j) });
+				m_blackTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
 				m_blackTile->Render(window);
 			}
 		}
@@ -67,7 +85,7 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 		sf::Text text;
 		text.setFont(g_font);
 		char buf[100];
-		sprintf_s(buf, "(%d, %d)", m_avatar->GetPosition().x, m_avatar->GetPosition().y);
+		sprintf_s(buf, "(%d, %d)", (int)m_avatar->GetPosition().x, (int)m_avatar->GetPosition().y);
 		text.setFillColor(sf::Color::Black);
 		text.setString(buf);
 		g_window->draw(text);
@@ -94,18 +112,22 @@ void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
 	}
 }
 
-void MainScene::AddPlayer(int id, Short2 position, const char* name)
+void MainScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window)
+{
+}
+
+void MainScene::AddPlayer(int id, sf::Vector2f position, const char* name)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Piece>();
-		m_avatar->SetTexture(m_pieceTexture, 0, 0, 64, 64);
+		m_avatar->SetSpriteTexture(m_pieceTexture, 0, 0, 64, 64);
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
-		g_leftX = position.x - 7; g_topY = position.y - 7;
+		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
 		m_players[id] = make_shared<Piece>();
-		m_players[id]->SetTexture(m_pieceTexture, 0, 0, 64, 64);
+		m_players[id]->SetSpriteTexture(m_pieceTexture, 0, 0, 64, 64);
 		m_players[id]->SetPosition(position);
 		m_players[id]->SetName(name);
 	}
@@ -116,7 +138,7 @@ void MainScene::ExitPlayer(INT id)
 	m_players.erase(id);
 }
 
-void MainScene::Move(INT id, Short2 position)
+void MainScene::Move(INT id, sf::Vector2f position)
 {
 	if (id == g_clientID) {
 		m_avatar->SetPosition(position);

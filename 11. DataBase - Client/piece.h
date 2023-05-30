@@ -5,13 +5,12 @@ class Piece : public Object
 {
 public:
 	Piece() = default;
-	Piece(Short2 position, Short2 length);
+	Piece(sf::Vector2f position, sf::Vector2f size);
 	~Piece() override;
 
 	virtual void Update(float timeElapsed) override;
 	virtual void Render(const shared_ptr<sf::RenderWindow>& window) override;
 
-	virtual void SetPosition(Short2 position) override;
 	virtual void SetName(const char* name);
 	void SetChat(const char* name);
 private:

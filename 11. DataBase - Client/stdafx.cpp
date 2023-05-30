@@ -4,6 +4,7 @@
 GameFramework					g_gameFramework{};
 shared_ptr<sf::RenderWindow>	g_window;
 sf::TcpSocket					g_socket{};
+function<void()>					g_clickEvent;
 INT								g_clientID;
 sf::Font						g_font;
 INT								g_leftX;

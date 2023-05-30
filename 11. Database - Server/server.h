@@ -3,21 +3,6 @@
 #include "npc.h"
 #include "client.h"
 
-struct Event
-{
-	enum Type { RANDOM_MOVE, HEAL, ATTACK };
-
-	UINT m_id;
-	Type m_type;
-	chrono::system_clock::time_point m_executeTime;
-	INT m_eventMsg;
-	UINT m_targetid;
-
-	constexpr bool operator<(const Event& rhs) const {
-		return m_executeTime > rhs.m_executeTime;
-	}
-};
-
 class OBJECT;
 class CLIENT;
 class NPC;
@@ -37,8 +22,6 @@ public:
 	BOOL IsSamePosition(UINT id1, UINT id2);
 	void Move(UINT id, UCHAR direction);
 
-	unordered_set<int>& GetObjectsFromNearSector(INT id);
-
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);
 
@@ -56,8 +39,6 @@ public:
 
 private:
 	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC> m_objects;
-
-	concurrency::concurrent_priority_queue<Event> m_timerQueue;
 };
 
 

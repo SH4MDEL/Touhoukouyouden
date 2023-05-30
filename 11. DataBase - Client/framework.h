@@ -17,15 +17,16 @@ public:
 	void DestroyObject();
 
 	void OnProcessingKeyboardMessage(sf::Event inputEvent);
+	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window);
 
 	void FrameAdvance();
 	void Update(float timeElapsed);
 	void Render(const shared_ptr<sf::RenderWindow>& window);
 
-	Scene* GetScene() { return m_scenes[m_sceneIndex].get(); }
+	Scene* GetScene() { return m_scene.get(); }
+	void ChangeScene(INT tag);
 
 private:
-	array<unique_ptr<Scene>, 1>		m_scenes;
-	INT								m_sceneIndex;
+	unique_ptr<Scene>		m_scene;
 };
 

@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7efe2ce1-6897-4729-88b2-be4bf7f80c69}</ProjectGuid>
-    <RootNamespace>My11DatabaseServer</RootNamespace>
+    <ProjectGuid>{6b68a1fa-c9ce-4aa9-a085-5512c6ccf85b}</ProjectGuid>
+    <RootNamespace>My11DataBaseServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

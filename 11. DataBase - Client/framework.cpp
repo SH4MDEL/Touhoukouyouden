@@ -14,11 +14,7 @@ void GameFramework::OnCreate()
 
 void GameFramework::BulidObject()
 {
-	m_sceneIndex = Scene::Tag::Main;
-	m_scenes[Scene::Tag::Login] = make_unique<LoginScene>();
-	m_scenes[Scene::Tag::Main] = make_unique<MainScene>();
-
-	m_scenes[m_sceneIndex]->OnCreate();
+	m_scene = make_unique<LoginScene>();
 
 	Timer::GetInstance().Tick();
 }
@@ -33,7 +29,12 @@ void GameFramework::DestroyObject()
 
 void GameFramework::OnProcessingKeyboardMessage(sf::Event inputEvent)
 {
-	m_scenes[m_sceneIndex]->OnProcessingKeyboardMessage(inputEvent);
+	m_scene->OnProcessingKeyboardMessage(inputEvent);
+}
+
+void GameFramework::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window)
+{
+	m_scene->OnProcessingMouseMessage(inputEvent, window);
 }
 
 void GameFramework::FrameAdvance()
@@ -45,10 +46,23 @@ void GameFramework::FrameAdvance()
 
 void GameFramework::Update(float timeElapsed)
 {
-	m_scenes[m_sceneIndex]->Update(timeElapsed);
+	m_scene->Update(timeElapsed);
 }
 
 void GameFramework::Render(const shared_ptr<sf::RenderWindow>& window)
 {
-	m_scenes[m_sceneIndex]->Render(window);
+	m_scene->Render(window);
+}
+
+void GameFramework::ChangeScene(INT tag)
+{
+	switch (tag)
+	{
+	case Scene::Login:
+		m_scene = make_unique<LoginScene>();
+		break;
+	case Scene::Main:
+		m_scene = make_unique<MainScene>();
+		break;
+	}
 }

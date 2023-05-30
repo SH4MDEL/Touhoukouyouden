@@ -12,16 +12,13 @@ public:
 	};
 
 	Scene() = default;
-	Scene(Tag tag);
 	virtual ~Scene() = default;
-
-	virtual void OnCreate() = 0;
-	virtual void OnDestroy() = 0;
 
 	virtual void Update(float timeElapsed) = 0;
 	virtual void Render(const shared_ptr<sf::RenderWindow>& window) = 0;
 
 	virtual void OnProcessingKeyboardMessage(sf::Event inputEvent) = 0;
+	virtual void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) = 0;
 
 protected:
 	virtual void BuildObjects() = 0;

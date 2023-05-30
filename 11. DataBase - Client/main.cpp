@@ -6,34 +6,9 @@ void InitInstance();
 
 int main()
 {
-	wcout.imbue(locale("korean"));
-    sf::Socket::Status status = g_socket.connect("127.0.0.1", SERVER_PORT);
-	g_socket.setBlocking(false);
-
-	if (status != sf::Socket::Done) {
-		wcout << L"서버와 연결할 수 없습니다.\n";
-		exit(-1);
-	}
-
-	if (!g_font.loadFromFile("..\\Resource\\cour.ttf")) {
-		cout << "Font Loading Error!\n";
-		exit(-1);
-	}
-
 	InitInstance();
 
-	g_window = make_shared<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "NPC");
-
-    cs_packet_login packet;
-    packet.size = sizeof(cs_packet_login);
-    packet.type = CS_PACKET_LOGIN;
-    string player_name{ "PL" };
-    player_name += to_string(GetCurrentProcessId());
-    strcpy_s(packet.name, player_name.c_str());
-    Send(&packet);
-#ifdef NETWORK_DEBUG
-    cout << "CS_PACKET_LOGIN 송신" << endl;
-#endif
+	g_window = make_shared<sf::RenderWindow>(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "DataBase");
 	
 	while (g_window->isOpen()) {
         sf::Event event;
@@ -42,9 +17,16 @@ int main()
 			if (event.type == sf::Event::Closed) {
 				g_window->close();
 			}
-			if (event.type == sf::Event::KeyPressed) {
+			if (event.type == sf::Event::TextEntered ||
+                event.type == sf::Event::KeyPressed ||
+                event.type == sf::Event::KeyReleased) {
 				g_gameFramework.OnProcessingKeyboardMessage(event);
 			}
+            if (event.type == sf::Event::MouseButtonPressed ||
+                event.type == sf::Event::MouseButtonReleased ||
+                event.type == sf::Event::MouseMoved) {
+                g_gameFramework.OnProcessingMouseMessage(event, g_window);
+            }
 		}
 		g_window->clear();
 		g_gameFramework.FrameAdvance();
@@ -54,6 +36,10 @@ int main()
 
 void InitInstance()
 {
+    if (!g_font.loadFromFile("..\\Resource\\cour.ttf")) {
+        cout << "Font Loading Error!\n";
+        exit(-1);
+    }
 	g_gameFramework.OnCreate();
 }
 
@@ -135,7 +121,7 @@ void ProcessPacket(char* buf)
     {
         sc_packet_add_player* pk = reinterpret_cast<sc_packet_add_player*>(buf);
         MainScene* scene = (MainScene*)g_gameFramework.GetScene();
-        scene->AddPlayer(pk->id, pk->coord, pk->name);
+        scene->AddPlayer(pk->id, { (float)pk->coord.x, (float)pk->coord.y }, pk->name);
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_ADD_PLAYER 수신" << endl;
 #endif
@@ -145,7 +131,7 @@ void ProcessPacket(char* buf)
     {
         sc_packet_object_info* pk = reinterpret_cast<sc_packet_object_info*>(buf);
         MainScene* scene = (MainScene*)g_gameFramework.GetScene();
-        scene->Move(pk->id, pk->coord);
+        scene->Move(pk->id, { (float)pk->coord.x, (float)pk->coord.y });
 #ifdef NETWORK_DEBUG
         cout << "SC_PACKET_OBJECT_INFO 수신" << endl;
 #endif

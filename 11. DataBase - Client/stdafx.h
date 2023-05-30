@@ -15,6 +15,8 @@
 #include <array>
 #include <string>
 #include <unordered_map>
+#include <functional>
+#include <sstream>
 using namespace std;
 #define endl "\n";
 
@@ -36,6 +38,7 @@ class GameFramework;
 extern GameFramework				g_gameFramework;
 extern shared_ptr<sf::RenderWindow>	g_window;
 extern sf::TcpSocket				g_socket;
+extern function<void()>				g_clickEvent;
 extern INT							g_clientID;
 extern sf::Font						g_font;
 extern INT							g_leftX;

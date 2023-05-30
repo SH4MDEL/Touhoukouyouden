@@ -1,9 +1,5 @@
 #include "server.h"
 
-INT API_SendMessage(lua_State* state) { return g_gameServer.Lua_SendMessage(state); }
-INT API_GetX(lua_State* state) { return g_gameServer.Lua_GetX(state); }
-INT API_GetY(lua_State* state) { return g_gameServer.Lua_GetY(state); }
-
 GameServer::GameServer()
 {
 	for (UINT i = 0; i < MAX_USER; ++i) {
@@ -28,19 +24,6 @@ void GameServer::InitializeNPC()
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
 		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
-
-		npc->m_luaState = luaL_newstate();
-		luaL_openlibs(npc->m_luaState);
-		luaL_loadfile(npc->m_luaState, "npc.lua");
-		lua_pcall(npc->m_luaState, 0, 0, 0);
-
-		lua_getglobal(npc->m_luaState, "set_uid");
-		lua_pushnumber(npc->m_luaState, i);
-		lua_pcall(npc->m_luaState, 1, 0, 0);
-
-		lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
-		lua_register(npc->m_luaState, "API_GetX", API_GetX);
-		lua_register(npc->m_luaState, "API_GetY", API_GetY);
 	}
 	cout << "Initialize NPC end\n";
 }
@@ -148,11 +131,6 @@ void GameServer::Move(UINT id, UCHAR direction)
 	}
 }
 
-unordered_set<int>& GameServer::GetObjectsFromNearSector(INT id)
-{
-
-}
-
 shared_ptr<CLIENT> GameServer::GetClient(UINT id)
 {
 	return static_pointer_cast<CLIENT>(m_objects[id]);
@@ -175,11 +153,13 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	memcpy(expOverlapped->m_sendMsg, &waker, sizeof(waker));
 	PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
 
+	// 이미 활동중인 NPC라면 return
 	auto npc = static_pointer_cast<NPC>(m_objects[id]);
 	if (npc->m_isActive) return;
 	bool oldState = false;
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
+	// 아니라면 타이머 쓰레드에 이동 명령 통지
 	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
 }
 

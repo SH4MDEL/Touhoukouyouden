@@ -6,27 +6,24 @@
 class MainScene : public Scene
 {
 public:
-	MainScene() = default;
-	MainScene(Tag tag);
-	virtual ~MainScene() = default;
-
-	virtual void OnCreate() override;
-	virtual void OnDestroy() override;
+	MainScene();
+	virtual ~MainScene();
 
 	void Update(float timeElapsed) override;
-	void Render(const shared_ptr<sf::RenderWindow>& window) override;
+	void Render(const shared_ptr<sf::RenderWindow>& window) final;
 	
-	void OnProcessingKeyboardMessage(sf::Event inputEvent) override;
+	void OnProcessingKeyboardMessage(sf::Event inputEvent) final;
+	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
 
-	void AddPlayer(int id, Short2 position, const char* name);
+	void AddPlayer(int id, sf::Vector2f position, const char* name);
 	void ExitPlayer(int id);
 
-	void Move(INT id, Short2 position);
+	void Move(INT id, sf::Vector2f position);
 	void SetChat(INT id, const char* chat);
 
 private:
-	virtual void BuildObjects() override;
-	virtual void DestroyObject() override;
+	virtual void BuildObjects() final;
+	virtual void DestroyObject() final;
 
 private:
 	shared_ptr<sf::Texture>	m_boardTexture;

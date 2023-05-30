@@ -1,6 +1,6 @@
 #include "piece.h"
 
-Piece::Piece(Short2 position, Short2 length) : Object(position, length), 
+Piece::Piece(sf::Vector2f position, sf::Vector2f size) : Object(position, size),
 	m_chatStatue{ false }, m_chatTime {0.f}
 {
 }
@@ -22,8 +22,8 @@ void Piece::Update(float timeElapsed)
 
 void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
 {
-	float rx = (m_position.x - g_leftX) * TILE_WIDTH;
-	float ry = (m_position.y - g_topY) * TILE_WIDTH;
+	float rx = (m_spritePosition.x - g_leftX) * TILE_WIDTH;
+	float ry = (m_spritePosition.y - g_topY) * TILE_WIDTH;
 	m_sprite.setPosition(rx, ry);
 	window->draw(m_sprite);
 	if (m_chatStatue) {
@@ -36,11 +36,6 @@ void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
 		m_name.setPosition(rx + 32 - size.width / 2, ry - 20);
 		window->draw(m_name);
 	}
-}
-
-void Piece::SetPosition(Short2 position)
-{
-	m_position = position;
 }
 
 void Piece::SetName(const char* name)
