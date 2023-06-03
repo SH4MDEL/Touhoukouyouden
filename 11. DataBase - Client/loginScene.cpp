@@ -25,12 +25,13 @@ void LoginScene::BuildObjects()
 		g_gameFramework.ChangeScene(Tag::Main);
 	});
 
-	m_idBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 100.f }, sf::Vector2f{ 1.f, 1.f }, 20);
+	m_idBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 100.f }, sf::Vector2f{ 2.f, 1.f }, 20);
 	m_idBox->SetPosition(sf::Vector2f{ 200, 100 });
 	m_idBox->SetSpriteTexture(m_buttonTexture, 0, 0, 278, 115);
 	m_idBox->SetTextFont(g_font);
 	m_idBox->SetTextColor(sf::Color(255, 255, 255));
-	m_passwordBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 200.f }, sf::Vector2f{ 1.f, 1.f }, 20);
+
+	m_passwordBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 200.f }, sf::Vector2f{ 2.f, 1.f }, 20);
 }
 
 void LoginScene::DestroyObject()
@@ -40,6 +41,7 @@ void LoginScene::DestroyObject()
 
 void LoginScene::Update(float timeElapsed)
 {
+	m_idBox->Update(timeElapsed);
 }
 
 void LoginScene::Render(const shared_ptr<sf::RenderWindow>& window)

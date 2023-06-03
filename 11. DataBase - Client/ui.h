@@ -71,6 +71,7 @@ public:
 	InputTextBoxUI(sf::Vector2f position, sf::Vector2f size, INT limit);
 	virtual ~InputTextBoxUI() = default;
 
+	virtual void Update(float timeElapsed) override;
 	virtual void Render(const shared_ptr<sf::RenderWindow>& window) override;
 
 	virtual void OnProcessingKeyboardMessage(sf::Event inputEvent) override;
@@ -85,4 +86,9 @@ private:
 protected:
 	ostringstream	m_texting;
 	int				m_limit;
+
+	const FLOAT		m_caretLifetime = 0.5f;
+	FLOAT			m_caretTime;
+	BOOL			m_caret;
+	BOOL			m_caretEvent;
 };

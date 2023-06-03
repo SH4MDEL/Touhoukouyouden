@@ -141,9 +141,33 @@ void ButtonUIObject::SetClickEvent(function<void()> clickEvent)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-InputTextBoxUI::InputTextBoxUI(sf::Vector2f position, sf::Vector2f size, INT limit) : ButtonUIObject(position, size), m_limit{limit}
+InputTextBoxUI::InputTextBoxUI(sf::Vector2f position, sf::Vector2f size, INT limit) : 
+	ButtonUIObject(position, size), m_limit{ limit }, m_caretTime{ 0.f }, m_caret{ false }, m_caretEvent{false}
 {
 
+}
+
+void InputTextBoxUI::Update(float timeElapsed)
+{
+	if (!m_enable) return;
+
+	// 텍스트 바가 활성화 된 상태일경우 캐럿에 관한 업데이트 진행
+	if (m_type == Type::ACTIVE) {
+		m_caretTime += timeElapsed;
+		if (m_caretTime >= m_caretLifetime) {
+			m_caretTime -= m_caretLifetime;
+			m_caret = !m_caret;
+		}
+	}
+	if (m_caret) {
+		m_text.setString(m_texting.str() + "|");
+
+	}
+	else {
+		m_text.setString(m_texting.str());
+	}
+
+	for (auto& child : m_children) child->Update(timeElapsed);
 }
 
 void InputTextBoxUI::Render(const shared_ptr<sf::RenderWindow>& window)
@@ -161,7 +185,6 @@ void InputTextBoxUI::Render(const shared_ptr<sf::RenderWindow>& window)
 void InputTextBoxUI::OnProcessingKeyboardMessage(sf::Event inputEvent)
 {
 	if (m_type == Type::ACTIVE) {
-		cout << "asdf" << endl;
 		int charType = inputEvent.text.unicode;
 		if (charType < 128) {
 			if (m_texting.str().length() < m_limit) {
@@ -187,9 +210,9 @@ void InputTextBoxUI::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 	float buttonWidth = buttonXPos + m_sprite.getLocalBounds().width * m_spriteSize.x;
 	float buttonHeigth = buttonYPos + m_sprite.getLocalBounds().height * m_spriteSize.y;
 
-	if (mouseX < buttonWidth && mouseX > buttonXPos && mouseY < buttonHeigth && mouseY > buttonYPos) {
-		// 마우스와 겹친 상태에서 클릭 발생
-		if (m_type == Type::MOUSEON && inputEvent.type == sf::Event::MouseButtonPressed) {
+	if (inputEvent.type == sf::Event::MouseButtonPressed) {
+		// 클릭 발생 시 마우스가 버튼 위에 있음
+		if (mouseX < buttonWidth && mouseX > buttonXPos && mouseY < buttonHeigth && mouseY > buttonYPos) {
 			m_type = Type::ACTIVE;
 
 			string oldText = m_texting.str();
@@ -199,15 +222,11 @@ void InputTextBoxUI::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 			}
 			m_text.setString(m_texting.str());
 		}
-		// 텍스트박스가 활성화 상태가 아니라면
-		else if (m_type != Type::ACTIVE){
-			m_type = Type::MOUSEON;
-		}
-	}
-	else {
-		// 겹치지 않은 상태에서 클릭 발생
-		if (sf::Event::MouseButtonPressed) {
+		// 마우스가 버튼 위에 없음
+		else {
 			m_type = Type::NOACTIVE;
+			m_caret = false;
+			m_caretTime = 0.f;
 		}
 	}
 }
@@ -219,15 +238,27 @@ void InputTextBoxUI::SetTextLimit(INT limit)
 
 void InputTextBoxUI::SetInputLogic(INT charType)
 {
-	if (charType != DELETE_KEY && charType != ENTER_KEY && charType != ESCAPE_KEY) {
-		m_texting << static_cast<char>(charType);
-	}
-	else if (charType == DELETE_KEY) {
+	if (charType == DELETE_KEY) {
 		if (m_texting.str().length() > 0) {
 			DeleteLastChar();
 		}
 	}
-	m_text.setString(m_texting.str() + "_");
+	else if (charType == ENTER_KEY) {
+		// 입력 처리
+		m_type = Type::NOACTIVE;
+		m_caret = false;
+		m_caretTime = 0.f;
+	}
+	else if (charType == ESCAPE_KEY) {
+		// 탈출
+		m_type = Type::NOACTIVE;
+		m_caret = false;
+		m_caretTime = 0.f;
+	}
+	else {
+		m_texting << static_cast<char>(charType);
+	}
+	m_text.setString(m_texting.str());
 }
 
 void InputTextBoxUI::DeleteLastChar()
