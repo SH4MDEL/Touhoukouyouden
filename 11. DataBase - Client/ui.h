@@ -27,6 +27,8 @@ public:
 	void SetTextSize(int size);
 	void SetTextColor(sf::Color color);
 	void SetTextFont(sf::Font font);
+	
+	string GetString();
 
 protected:
 	BOOL							m_enable;
@@ -90,5 +92,4 @@ protected:
 	const FLOAT		m_caretLifetime = 0.5f;
 	FLOAT			m_caretTime;
 	BOOL			m_caret;
-	BOOL			m_caretEvent;
 };

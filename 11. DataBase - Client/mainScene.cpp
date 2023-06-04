@@ -2,26 +2,6 @@
 
 MainScene::MainScene()
 {
-	wcout.imbue(locale("korean"));
-	sf::Socket::Status status = g_socket.connect("127.0.0.1", SERVER_PORT);
-	g_socket.setBlocking(false);
-
-	if (status != sf::Socket::Done) {
-		wcout << L"서버와 연결할 수 없습니다.\n";
-		exit(-1);
-	}
-
-	cs_packet_login packet;
-	packet.size = sizeof(cs_packet_login);
-	packet.type = CS_PACKET_LOGIN;
-	string player_name{ "PL" };
-	player_name += to_string(GetCurrentProcessId());
-	strcpy_s(packet.name, player_name.c_str());
-	Send(&packet);
-#ifdef NETWORK_DEBUG
-	cout << "CS_PACKET_LOGIN 송신" << endl;
-#endif
-
 	BuildObjects();
 }
 

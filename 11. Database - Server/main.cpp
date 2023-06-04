@@ -1,9 +1,5 @@
 #include "main.h"
 
-INT API_SendMessage(lua_State* state) { return g_gameServer.Lua_SendMessage(state); }
-INT API_GetX(lua_State* state) { return g_gameServer.Lua_GetX(state); }
-INT API_GetY(lua_State* state) { return g_gameServer.Lua_GetY(state); }
-
 int main()
 {
 	g_gameServer.InitializeNPC();
@@ -202,36 +198,13 @@ void WorkerThread(HANDLE hiocp)
 		{
 			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
+
 			npc->m_luaLock.lock();
-
-			if (!npc->m_luaInit) {
-				npc->m_luaInit = true;
-				npc->m_luaState = luaL_newstate();
-				lua_gc(npc->m_luaState, LUA_GCSTOP);
-
-				luaL_openlibs(npc->m_luaState);
-				luaL_loadfile(npc->m_luaState, "npc.lua");
-				lua_pcall(npc->m_luaState, 0, 0, 0);
-
-				lua_getglobal(npc->m_luaState, "set_uid");
-				lua_pushnumber(npc->m_luaState, npc->m_id);
-				lua_pcall(npc->m_luaState, 1, 0, 0);
-				lua_pop(npc->m_luaState, 1);
-
-
-				lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
-				lua_register(npc->m_luaState, "API_GetX", API_GetX);
-				lua_register(npc->m_luaState, "API_GetY", API_GetY);
-
-			}
 			lua_getglobal(npc->m_luaState, "event_player_move");
 			lua_pushnumber(npc->m_luaState, *cid);
 			lua_pcall(npc->m_luaState, 1, 0, 0);
-			lua_pop(npc->m_luaState, 1);
-
-			//lua_close(npc->m_luaState);
-
 			npc->m_luaLock.unlock();
+
 			delete expOverlapped;
 			break;
 		}
@@ -239,30 +212,13 @@ void WorkerThread(HANDLE hiocp)
 		{
 			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
+
 			npc->m_luaLock.lock();
-
-			//npc->m_luaState = luaL_newstate();
-			//luaL_openlibs(npc->m_luaState);
-			//luaL_loadfile(npc->m_luaState, "npc.lua");
-			//lua_pcall(npc->m_luaState, 0, 0, 0);
-
-			//lua_getglobal(npc->m_luaState, "set_uid");
-			//lua_pushnumber(npc->m_luaState, npc->m_id);
-			//lua_pcall(npc->m_luaState, 1, 0, 0);
-			//lua_pop(npc->m_luaState, 1);
-
-
-			//lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
-			//lua_register(npc->m_luaState, "API_GetX", API_GetX);
-			//lua_register(npc->m_luaState, "API_GetY", API_GetY);
-
 			lua_getglobal(npc->m_luaState, "event_player_leave");
 			lua_pushnumber(npc->m_luaState, *cid);
 			lua_pcall(npc->m_luaState, 1, 0, 0);
-			lua_pop(npc->m_luaState, 1);
-
-			//lua_close(npc->m_luaState);
 			npc->m_luaLock.unlock();
+
 			delete expOverlapped;
 			break;
 		}

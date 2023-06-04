@@ -65,6 +65,11 @@ void UIObject::SetTextFont(sf::Font font)
 	m_textFont = font;
 }
 
+string UIObject::GetString()
+{
+	return m_text.getString().toAnsiString();
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ButtonUIObject::ButtonUIObject(sf::Vector2f position, sf::Vector2f size) : UIObject(position, size), m_type{Type::NOACTIVE}
@@ -142,7 +147,7 @@ void ButtonUIObject::SetClickEvent(function<void()> clickEvent)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 InputTextBoxUI::InputTextBoxUI(sf::Vector2f position, sf::Vector2f size, INT limit) : 
-	ButtonUIObject(position, size), m_limit{ limit }, m_caretTime{ 0.f }, m_caret{ false }, m_caretEvent{false}
+	ButtonUIObject(position, size), m_limit{ limit }, m_caretTime{ 0.f }, m_caret{ false }
 {
 
 }

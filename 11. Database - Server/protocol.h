@@ -4,7 +4,10 @@
 
 constexpr short		SERVER_PORT = 4000;
 constexpr int		BUFSIZE = 1024;
+
 constexpr int		NAMESIZE = 20;
+constexpr int		IDSIZE = 20;
+constexpr int		PASSWORDSIZE = 20;
 constexpr int		CHATSIZE = 100;
 
 constexpr int		MAP_HEIGHT = 2000;
@@ -15,10 +18,11 @@ constexpr char		CS_PACKET_MOVE = 2;
 constexpr char		CS_PACKET_LOGOUT = 100;
 
 constexpr char		SC_PACKET_LOGIN_CONFIRM = 1;
-constexpr char		SC_PACKET_ADD_PLAYER = 2;
-constexpr char		SC_PACKET_OBJECT_INFO = 3;
-constexpr char		SC_PACKET_CHAT = 4;
-constexpr char		SC_PACKET_EXIT_PLAYER = 5;
+constexpr char		SC_PACKET_LOGIN_FAIL = 2;
+constexpr char		SC_PACKET_ADD_PLAYER = 3;
+constexpr char		SC_PACKET_OBJECT_INFO = 4;
+constexpr char		SC_PACKET_CHAT = 5;
+constexpr char		SC_PACKET_EXIT_PLAYER = 6;
 
 //#define NETWORK_DEBUG
 
@@ -56,6 +60,8 @@ struct packet
 struct cs_packet_login : public packet
 {
 	char name[NAMESIZE];
+	char id[IDSIZE];
+	char password[PASSWORDSIZE];
 };
 
 struct cs_packet_move : public packet
@@ -78,6 +84,11 @@ struct sc_packet_login_confirm : public packet
 	unsigned int id;
 };
 
+struct sc_packet_login_fail : public packet
+{
+	unsigned int id;
+};
+
 struct sc_packet_add_player : public packet
 {
 	unsigned int id;
@@ -95,7 +106,7 @@ struct sc_packet_object_info : public packet
 struct sc_packet_chat : public packet
 {
 	unsigned int id;
-	char message[CHATSIZE];
+	char message[CHATSIZE];	// 가변 패킷 크기
 };
 
 struct sc_packet_exit_player : public packet

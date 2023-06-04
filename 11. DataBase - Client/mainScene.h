@@ -9,11 +9,13 @@ public:
 	MainScene();
 	virtual ~MainScene();
 
-	void Update(float timeElapsed) override;
+	void Update(float timeElapsed) final;
 	void Render(const shared_ptr<sf::RenderWindow>& window) final;
 	
 	void OnProcessingKeyboardMessage(sf::Event inputEvent) final;
 	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
+
+	void ProcessPacket(char* buf) final;
 
 	void AddPlayer(int id, sf::Vector2f position, const char* name);
 	void ExitPlayer(int id);

@@ -21,6 +21,9 @@
 #include <random>
 #include <memory>
 #include <concurrent_priority_queue.h>
+#include <windows.h>  
+#include <sqlext.h>  
+#include <locale.h>
 using namespace std;
 #define endl "\n"
 

@@ -20,6 +20,10 @@ public:
 	virtual void OnProcessingKeyboardMessage(sf::Event inputEvent) = 0;
 	virtual void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) = 0;
 
+	void Recv();
+	void TranslatePacket(char* buf, size_t io_byte);
+	virtual void ProcessPacket(char* buf) = 0;
+
 protected:
 	virtual void BuildObjects() = 0;
 	virtual void DestroyObject() = 0;

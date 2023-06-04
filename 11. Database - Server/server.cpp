@@ -1,5 +1,9 @@
 #include "server.h"
 
+INT API_SendMessage(lua_State* state) { return g_gameServer.Lua_SendMessage(state); }
+INT API_GetX(lua_State* state) { return g_gameServer.Lua_GetX(state); }
+INT API_GetY(lua_State* state) { return g_gameServer.Lua_GetY(state); }
+
 GameServer::GameServer()
 {
 	for (UINT i = 0; i < MAX_USER; ++i) {
@@ -24,6 +28,25 @@ void GameServer::InitializeNPC()
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
 		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
+
+		npc->m_luaInit = true;
+		npc->m_luaState = luaL_newstate();
+		lua_gc(npc->m_luaState, LUA_GCSTOP);
+
+		luaL_openlibs(npc->m_luaState);
+		luaL_loadfile(npc->m_luaState, "npc.lua");
+		lua_pcall(npc->m_luaState, 0, 0, 0);
+
+		lua_getglobal(npc->m_luaState, "set_uid");
+		lua_pushnumber(npc->m_luaState, npc->m_id);
+		lua_pcall(npc->m_luaState, 1, 0, 0);
+		lua_pop(npc->m_luaState, 1);
+
+
+		lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
+		lua_register(npc->m_luaState, "API_GetX", API_GetX);
+		lua_register(npc->m_luaState, "API_GetY", API_GetY);
+
 	}
 	cout << "Initialize NPC end\n";
 }

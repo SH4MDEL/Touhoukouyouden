@@ -8,11 +8,13 @@ public:
 	LoginScene();
 	virtual ~LoginScene();
 
-	void Update(float timeElapsed) override;
-	void Render(const shared_ptr<sf::RenderWindow>& window) override;
+	void Update(float timeElapsed) final;
+	void Render(const shared_ptr<sf::RenderWindow>& window) final;
 
 	void OnProcessingKeyboardMessage(sf::Event inputEvent) final;
 	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
+
+	void ProcessPacket(char* buf) final;
 
 private:
 	virtual void BuildObjects() final;

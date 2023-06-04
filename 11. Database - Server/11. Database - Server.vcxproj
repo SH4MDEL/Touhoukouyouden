@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{6b68a1fa-c9ce-4aa9-a085-5512c6ccf85b}</ProjectGuid>
+    <ProjectGuid>{047aaca9-c5f2-43d8-9994-9cb4a386a582}</ProjectGuid>
     <RootNamespace>My11DataBaseServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -128,21 +128,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />
+    <ClCompile Include="Database.cpp" />
     <ClCompile Include="exp_over.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="npc.cpp" />
     <ClCompile Include="object.cpp" />
     <ClCompile Include="server.cpp" />
+    <ClCompile Include="singleton.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client.h" />
+    <ClInclude Include="Database.h" />
     <ClInclude Include="exp_over.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="npc.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="server.h" />
+    <ClInclude Include="singleton.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

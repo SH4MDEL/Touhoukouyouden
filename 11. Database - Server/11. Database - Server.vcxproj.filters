@@ -14,10 +14,16 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="소스 파일\Object">
-      <UniqueIdentifier>{ac6bf957-e941-4dd0-a377-0ad16c1e3bfe}</UniqueIdentifier>
+      <UniqueIdentifier>{1f482f5d-fe20-4e62-9bf5-6870209d729d}</UniqueIdentifier>
     </Filter>
     <Filter Include="헤더 파일\Object">
-      <UniqueIdentifier>{0d886bf1-c66f-4f51-b51d-dbf3ec2147cf}</UniqueIdentifier>
+      <UniqueIdentifier>{3ea85354-a093-435b-8a40-5eb0d5902bf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Singleton">
+      <UniqueIdentifier>{580ecb5a-7a79-483e-84b6-9f1cc10cf6f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Singleton">
+      <UniqueIdentifier>{99dcaa60-8b53-4eaa-a86c-6c7cf86cca97}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -33,14 +39,20 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="npc.cpp">
+      <Filter>소스 파일\Object</Filter>
+    </ClCompile>
     <ClCompile Include="object.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
     <ClCompile Include="client.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
-    <ClCompile Include="npc.cpp">
-      <Filter>소스 파일\Object</Filter>
+    <ClCompile Include="Database.cpp">
+      <Filter>소스 파일\Singleton</Filter>
+    </ClCompile>
+    <ClCompile Include="singleton.cpp">
+      <Filter>소스 파일\Singleton</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +79,12 @@
     </ClInclude>
     <ClInclude Include="object.h">
       <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Database.h">
+      <Filter>헤더 파일\Singleton</Filter>
+    </ClInclude>
+    <ClInclude Include="singleton.h">
+      <Filter>헤더 파일\Singleton</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
