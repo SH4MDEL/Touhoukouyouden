@@ -2,8 +2,12 @@
 
 int main()
 {
+	// 데이터베이스와 연결
+	Database::GetInstance();
+	// NPC 초기화
 	g_gameServer.InitializeNPC();
 
+	// 서버 연결
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
 
@@ -237,57 +241,71 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 #ifdef NETWORK_DEBUG
 		cout << "CS_PACKET_LOGIN 수신" << endl;
 #endif
-		{
-			sc_packet_login_confirm sendpk;
-			sendpk.size = sizeof(sc_packet_login_confirm);
-			sendpk.type = SC_PACKET_LOGIN_CONFIRM;
-			sendpk.id = cid;
-			g_gameServer.GetClient(cid)->DoSend(&sendpk);
-			strcpy_s(g_gameServer.GetClient(cid)->m_name, pk->name);
-#ifdef NETWORK_DEBUG
-			cout << "SC_PACKET_LOGIN_CONFIRM 송신 - ID : " << (int)sendpk.id << endl;
-#endif
+		cout << pk->id << ", " << pk->password << endl;
+		// 해당 ID 및 패스워드가 데이터베이스에 존재함
+		if (Database::GetInstance().Login(cid, pk->id, pk->password)) {
 			{
-				unique_lock<mutex> lock(g_gameServer.GetClient(cid)->m_mutex);
-				g_gameServer.GetClient(cid)->m_state = OBJECT::INGAME;
-			}
-
-		}
-
-		// 섹터 안에 있는 오브젝트의 ID를 담음.
-		unordered_set<int> newViewList;
-		short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
-		short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
-		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
-		// 주변 9개의 섹터 전부 조사
-		for (int i = 0; i < 9; ++i) {
-			if (sectorX + dx[i] >= MAP_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
-				sectorY + dy[i] >= MAP_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
-				continue;
-			}
-
-			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
-			for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+				sc_packet_login_confirm sendpk;
+				sendpk.size = sizeof(sc_packet_login_confirm);
+				sendpk.type = SC_PACKET_LOGIN_CONFIRM;
+				sendpk.id = cid;
+				g_gameServer.GetClient(cid)->DoSend(&sendpk);
+				strcpy_s(g_gameServer.GetClient(cid)->m_name, pk->name);
+#ifdef NETWORK_DEBUG
+				cout << "SC_PACKET_LOGIN_CONFIRM 송신 - ID : " << (int)sendpk.id << endl;
+#endif
 				{
-					if (id < MAX_USER) {
-						unique_lock<mutex> lock(g_gameServer.GetClient(id)->m_mutex);
-						if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
-					}
-					else {
-						unique_lock<mutex> lock(g_gameServer.GetNPC(id)->m_mutex);
-						if (g_gameServer.GetNPC(id)->m_state != OBJECT::INGAME) continue;
-					}
+					unique_lock<mutex> lock(g_gameServer.GetClient(cid)->m_mutex);
+					g_gameServer.GetClient(cid)->m_state = OBJECT::INGAME;
 				}
-				if (!g_gameServer.CanSee(cid, id)) continue;
 
-				// 일단 나한테 전송
-				g_gameServer.GetClient(cid)->SendAddPlayer(id);
-				// 상대는 NPC가 아닐 경우 전송
-				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
-				else if (g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
 			}
-			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+
+			// 섹터 안에 있는 오브젝트의 ID를 담음.
+			unordered_set<int> newViewList;
+			short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
+			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+			// 주변 9개의 섹터 전부 조사
+			for (int i = 0; i < 9; ++i) {
+				if (sectorX + dx[i] >= MAP_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+					sectorY + dy[i] >= MAP_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+					continue;
+				}
+
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+				for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+					{
+						if (id < MAX_USER) {
+							unique_lock<mutex> lock(g_gameServer.GetClient(id)->m_mutex);
+							if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
+						}
+						else {
+							unique_lock<mutex> lock(g_gameServer.GetNPC(id)->m_mutex);
+							if (g_gameServer.GetNPC(id)->m_state != OBJECT::INGAME) continue;
+						}
+					}
+					if (!g_gameServer.CanSee(cid, id)) continue;
+
+					// 일단 나한테 전송
+					g_gameServer.GetClient(cid)->SendAddPlayer(id);
+					// 상대는 NPC가 아닐 경우 전송
+					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
+					else if (g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
+				}
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+			}
+		}
+		// 존재하지 않음
+		else {
+			sc_packet_login_fail sendpk;
+			sendpk.size = sizeof(sc_packet_login_fail);
+			sendpk.type = SC_PACKET_LOGIN_FAIL;
+			g_gameServer.GetClient(cid)->DoSend(&sendpk);
+#ifdef NETWORK_DEBUG
+			cout << "SC_PACKET_LOGIN_FAIL 송신 - ID : " << cid << endl;
+#endif
 		}
 		break;
 	}

@@ -15,6 +15,7 @@ public:
 	void InitializeNPC();
 
 	UINT RegistClient(const SOCKET& c_socket);
+	void RegistClientPosition(UINT id, Short2 position);
 	void ExitClient(UINT id);
 
 	Short2 GetPlayerPosition(UINT id);

@@ -24,7 +24,7 @@ constexpr char		SC_PACKET_OBJECT_INFO = 4;
 constexpr char		SC_PACKET_CHAT = 5;
 constexpr char		SC_PACKET_EXIT_PLAYER = 6;
 
-//#define NETWORK_DEBUG
+#define NETWORK_DEBUG
 
 #pragma pack(push, 1)
 
@@ -86,7 +86,6 @@ struct sc_packet_login_confirm : public packet
 
 struct sc_packet_login_fail : public packet
 {
-	unsigned int id;
 };
 
 struct sc_packet_add_player : public packet

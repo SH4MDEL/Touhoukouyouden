@@ -123,7 +123,7 @@ void ButtonUIObject::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 		// 마우스와 겹친 상태에서 클릭 발생
 		if (m_type == Type::MOUSEON && inputEvent.type == sf::Event::MouseButtonPressed) {
 			m_type = Type::ACTIVE;
-			//g_clickEvent = m_clickEvent;
+			g_clickEvent = m_clickEvent;
 			m_sprite.setColor(sf::Color(145, 145, 145));
 		}
 		// 겹쳤지만 클릭은 미발생
@@ -239,6 +239,11 @@ void InputTextBoxUI::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 void InputTextBoxUI::SetTextLimit(INT limit)
 {
 	m_limit = limit;
+}
+
+string InputTextBoxUI::GetString()
+{
+	return m_texting.str();
 }
 
 void InputTextBoxUI::SetInputLogic(INT charType)

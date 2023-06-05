@@ -61,19 +61,26 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 			client->m_state = OBJECT::ALLOC;
 		}
 		client->m_id = i;
-		client->m_position.x = rand() % (MAP_WIDTH);
-		client->m_position.y = rand() % (MAP_HEIGHT);
+		client->m_position.x = -1;
+		client->m_position.y = -1;
 		client->m_name[0] = 0;
 		client->m_prevRemain = 0;
 		client->m_socket = c_socket;
 
-		g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].lock();
-		g_sector[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].insert(i);
-		g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].unlock();
 
 		return i;
 	}
 	return -1;
+}
+
+void GameServer::RegistClientPosition(UINT id, Short2 position)
+{
+	auto client = static_pointer_cast<CLIENT>(m_objects[id]);
+
+	client->m_position = position;
+	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].lock();
+	g_sector[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].insert(id);
+	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].unlock();
 }
 
 void GameServer::ExitClient(UINT id)

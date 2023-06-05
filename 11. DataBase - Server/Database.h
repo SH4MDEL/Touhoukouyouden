@@ -1,7 +1,9 @@
 #pragma once
 #include "stdafx.h"
 #include "singleton.h"
+#include "server.h"
 
+class GameServer;
 class Database : public Singleton<Database>
 {
 public:
@@ -10,7 +12,7 @@ public:
 
 	void DatabaseThread();
 
-	int Login(const char* id, const char* password);
+	bool Login(UINT uid, const char* id, const char* password);
 
 private:
 	void ShowError(SQLHANDLE handle, SQLSMALLINT type, RETCODE retcode);

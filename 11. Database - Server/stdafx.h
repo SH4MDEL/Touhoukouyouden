@@ -56,7 +56,7 @@ struct Event
 extern concurrency::concurrent_priority_queue<Event> m_timerQueue;
 
 constexpr int MAX_USER = 20000;
-constexpr int MAX_NPC = 200000;
+constexpr int MAX_NPC = 2000;
 constexpr int VIEW_RANGE = 5;
 
 extern array<array<unordered_set<int>, MAP_WIDTH / (VIEW_RANGE * 2) + 1>, MAP_HEIGHT / (VIEW_RANGE * 2) + 1> g_sector;

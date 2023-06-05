@@ -13,6 +13,8 @@ Database::Database()
 {
     setlocale(LC_ALL, "korean");
 
+    cout << "Initialize Database begin\n";
+
     // Allocate environment handle  
     retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
 
@@ -33,7 +35,7 @@ Database::Database()
 
                 // Allocate statement handle  
                 if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
-                    
+                    cout << "Initialize Database end\n";
                 }
             }
         }
@@ -55,42 +57,45 @@ void Database::DatabaseThread()
 
 }
 
-int Database::Login(const char* id, const char* password)
+bool Database::Login(UINT uid, const char* id, const char* password)
 {
+    handleLock.lock();
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
-    // DB에서 데이터를 읽어 옴.
-    //retcode = SQLExecDirect(hstmt, 
-    //    (SQLWCHAR*)L"SELECT player_id, player_name, player_level FROM player_table WHERE player_level > 20", SQL_NTS);
+    SQLWCHAR wstr[100];
+    memset(wstr, 0, sizeof(wstr));
+    wsprintf(wstr, TEXT("EXEC Login %S, %S"), id, password);
+    retcode = SQLExecDirect(hstmt, wstr, SQL_NTS);
 
-    retcode = SQLExecDirect(hstmt,
-        (SQLWCHAR*)L"EXEC get_high_level 20", SQL_NTS);
+    SQLINTEGER xPosition, yPosition;
+    SQLLEN Xlen = 0, Ylen = 0;
 
     if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+        retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &xPosition, 10, &Xlen);
+        retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &yPosition, 10, &Ylen);
 
-        //// Bind columns 1, 2, and 3  
-        //retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &player_id, 10, &cb_id);
-        //retcode = SQLBindCol(hstmt, 2, SQL_C_WCHAR, szName, NAME_LEN, &cbName);
-        //retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &player_level, 10, &cb_level);
-
-        //// Fetch and print each row of data. On an error, display a message and exit.  
-        //for (int i = 0; ; i++) {
-        //    retcode = SQLFetch(hstmt); // 데이터를 하나씩 꺼냄
-        //    if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
-        //        ShowError(hstmt, SQL_HANDLE_STMT, retcode);
-        //        return -1;
-        //    }
-        //    if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
-        //    {
-        //        printf("%d: ID: %d, Name: %ls, Level: %d\n", i + 1, player_id, szName, player_level);
-        //    }
-        //    else
-        //        break;
-        //}
+        retcode = SQLFetch(hstmt); // 데이터를 하나씩 꺼냄
+        if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
+            ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+            handleLock.unlock();
+            return false;
+        }
+        if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+            // ID가 이미 접속중일경우 예외처리 해줘야함.
+            // 어떻게?
+            g_gameServer.RegistClientPosition(uid, { (short)xPosition, (short)yPosition });
+            handleLock.unlock();
+            return true;
+        }
+        else {
+            handleLock.unlock();
+            return false;
+        }
     }
     else {
         ShowError(hstmt, SQL_HANDLE_STMT, retcode);
-        return -1;
+        handleLock.unlock();
+        return false;
     }
 }
 

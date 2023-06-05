@@ -65,8 +65,16 @@ void LoginScene::DestroyObject()
 
 void LoginScene::Update(float timeElapsed)
 {
+	if (g_clickEvent) {
+		cout << "asdf" << endl;
+		g_clickEvent();
+		g_clickEvent = nullptr;
+	}
+
 	m_idBox->Update(timeElapsed);
 	m_passwordBox->Update(timeElapsed);
+
+	Recv();
 }
 
 void LoginScene::Render(const shared_ptr<sf::RenderWindow>& window)
@@ -109,6 +117,7 @@ void LoginScene::ProcessPacket(char* buf)
 		cout << "SC_PACKET_LOGIN_CONFIRM 수신" << endl;
 #endif
 		break;
+	}
 	case SC_PACKET_LOGIN_FAIL:
 	{
 		// 로그인 실패했으니까 다시 하라는 메시지 출력

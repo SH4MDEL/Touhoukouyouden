@@ -28,7 +28,7 @@ public:
 	void SetTextColor(sf::Color color);
 	void SetTextFont(sf::Font font);
 	
-	string GetString();
+	virtual string GetString();
 
 protected:
 	BOOL							m_enable;
@@ -80,6 +80,8 @@ public:
 	virtual void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) override;
 
 	void SetTextLimit(INT limit);
+
+	virtual string GetString() override;
 
 private:
 	void SetInputLogic(INT charType);
