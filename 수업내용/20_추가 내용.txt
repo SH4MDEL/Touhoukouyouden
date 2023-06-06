@@ -1,0 +1,54 @@
+게임서버 엔진
+
+- 프라우드넷
+- 포톤 서버
+- 게임스파크
+- 플레이팹
+- 락넷
+
+프라우드 넷
+- 한국에서 개발된 네트워크 엔진
+- 초창기에는 P2P를 위한 홀펀칭으로 유명했음
+- 초창기에는 일반 C-API였으나, C++ 친화적으로 진화, C# 지원
+- Cross Platform
+	. Windows, Linux, Android, iOS, PlayStation4
+- 높은 생산성, 고성능
+- PIDL (Proudnet Interface Definition Language)을 사용한 프로토콜 관리
+
+기능
+- 기본 네트워킹. 서버/클라이언트 클래스
+- Wifi/Cellular 간 Handover
+- Remote Procedure Call
+- P2P Communication
+
+유용한 라이브러리
+
+프로토콜 관리 문제 해결
+- 고성능
+- 다른 언어, 다른 운영체제, 다른 CPU 사이의 통신 문제 해결
+
+ProtocolBuffer
+- 플랫폼과 언어에 독립적인 패킷 기술 라이브러리
+- 사용하기 쉽고, Configuration 파일로도 사용하기 좋음
+
+- 구글에서 개발한 언어, 컴퓨터 구조,
+  운영체제에 독립적인 구조화된 데이터의 직렬화 라이브러리로서,
+  JSON(또는 XML)과 비슷하지만 더 작고, 빠르고, 간단하다.
+- 많은 언어를 지원한다.
+	. C++, C#, Dart, Go, Java, Python
+- 확장 가능 : 수정한 protocol도 호환 가능
+
+용도
+- 프로토콜 정의
+- Configuration File
+- Save File
+- 구조화된 데이터의 전송/보관
+
+비교
+- 전용 Binary 포맷 : 호환성, 유지관리 비용
+- 스트링 : 유지관리 비용, 성능 하락
+- XML : 용량 증가, 성능 하락
+
+FlatBuffer
+- ProtocolBuffer의 단점인 성능을 보완
+- 사용 편의성을 희생
