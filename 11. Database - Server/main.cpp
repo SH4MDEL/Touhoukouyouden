@@ -182,7 +182,7 @@ void WorkerThread(HANDLE hiocp)
 				int* targetid = reinterpret_cast<int*>(expOverlapped->m_sendMsg + sizeof(UINT));
 				int moveCount = --(*sendMsg);
 				if (moveCount > 0) {
-					g_gameServer.AddTimer(key, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
+					g_gameServer.AddTimer(key, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
 				}
 				else {
 					EXP_OVER* expOverlapped = new EXP_OVER;
@@ -241,7 +241,6 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 #ifdef NETWORK_DEBUG
 		cout << "CS_PACKET_LOGIN 수신" << endl;
 #endif
-		cout << pk->id << ", " << pk->password << endl;
 		// 해당 ID 및 패스워드가 데이터베이스에 존재함
 		if (Database::GetInstance().Login(cid, pk->id, pk->password)) {
 			{

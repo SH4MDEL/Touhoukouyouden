@@ -18,9 +18,10 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <concurrent_priority_queue.h>
+#include <concurrent_unordered_map.h>
 #include <random>
 #include <memory>
-#include <concurrent_priority_queue.h>
 #include <windows.h>  
 #include <sqlext.h>  
 #include <locale.h>
@@ -39,21 +40,6 @@ extern SOCKET		g_clientSocket;
 class EXP_OVER;
 extern EXP_OVER     g_expOverlapped;
 extern mt19937		g_randomEngine;
-struct Event
-{
-    enum Type { RANDOM_MOVE, HEAL, ATTACK };
-
-    UINT m_id;
-    Type m_type;
-    chrono::system_clock::time_point m_executeTime;
-    INT m_eventMsg;
-    UINT m_targetid;
-
-    constexpr bool operator<(const Event& rhs) const {
-        return m_executeTime > rhs.m_executeTime;
-    }
-};
-extern concurrency::concurrent_priority_queue<Event> m_timerQueue;
 
 constexpr int MAX_USER = 20000;
 constexpr int MAX_NPC = 2000;

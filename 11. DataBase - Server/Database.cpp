@@ -44,7 +44,6 @@ Database::Database()
 
 Database::~Database()
 {
-    // Process data  
     SQLCancel(hstmt);
     SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
     SQLDisconnect(hdbc);
@@ -59,6 +58,9 @@ void Database::DatabaseThread()
 
 bool Database::Login(UINT uid, const char* id, const char* password)
 {
+    // 해당 ID가 이미 접속중인 경우 로그인 실패
+    if (m_id.count(uid)) return false;
+
     handleLock.lock();
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
@@ -85,6 +87,7 @@ bool Database::Login(UINT uid, const char* id, const char* password)
             // 어떻게?
             g_gameServer.RegistClientPosition(uid, { (short)xPosition, (short)yPosition });
             handleLock.unlock();
+            m_id.insert({ uid, id });
             return true;
         }
         else {
@@ -97,6 +100,54 @@ bool Database::Login(UINT uid, const char* id, const char* password)
         handleLock.unlock();
         return false;
     }
+}
+
+bool Database::Logout(UINT uid)
+{
+    // 이미 id가 존재하지 않으면 로그아웃 실패
+    if (!m_id.count(uid)) return false;
+
+    handleLock.lock();
+    m_id.unsafe_erase(uid);
+    handleLock.unlock();
+    return true;
+}
+
+bool Database::UpdateUserData(UINT uid, INT x, INT y)
+{
+    // id가 존재하지 않으면 저장 실패
+    if (!m_id.count(uid)) return false;
+    
+    handleLock.lock();
+    retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+    SQLWCHAR wstr[100];
+    memset(wstr, 0, sizeof(wstr));
+    wsprintf(wstr, TEXT("EXEC UpdateUserData %S, %d, %d"), m_id[uid].c_str(), x, y);
+    retcode = SQLExecDirect(hstmt, wstr, SQL_NTS);
+
+
+    if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+        if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
+            ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+            handleLock.unlock();
+            return false;
+        }
+        if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+            handleLock.unlock();
+            return true;
+        }
+        else {
+            handleLock.unlock();
+            return false;
+        }
+    }
+    else {
+        ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+        handleLock.unlock();
+        return false;
+    }
+
 }
 
 void Database::ShowError(SQLHANDLE handle, SQLSMALLINT type, RETCODE retcode)

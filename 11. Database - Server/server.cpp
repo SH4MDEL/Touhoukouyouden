@@ -91,6 +91,9 @@ void GameServer::ExitClient(UINT id)
 	g_sector[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].erase(id);
 	g_sectorLock[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].unlock();
 
+	Database::GetInstance().UpdateUserData(id, exitClient->m_position.x, exitClient->m_position.y);
+	Database::GetInstance().Logout(id);
+
 	for (UINT i = 0; i < MAX_USER; ++i) {
 		auto client = static_pointer_cast<CLIENT>(m_objects[i]);
 		{
@@ -171,9 +174,9 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
-void GameServer::AddTimer(UINT id, Event::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
+void GameServer::AddTimer(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
 {
-	m_timerQueue.push( Event{id, type, executeTime, eventMsg, targetid } );
+	m_timerQueue.push( TimerEvent{id, type, executeTime, eventMsg, targetid } );
 }
 
 void GameServer::WakeupNPC(UINT id, UINT waker)
@@ -190,7 +193,7 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
 	// 아니라면 타이머 쓰레드에 이동 명령 통지
-	m_timerQueue.push(Event{ id, Event::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
+	m_timerQueue.push(TimerEvent{ id, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
 }
 
 void GameServer::SleepNPC(UINT id)
@@ -321,7 +324,7 @@ void GameServer::TimerThread(HANDLE hiocp)
 	while (true)
 	{
 		auto currentTime = chrono::system_clock::now();
-		Event ev;
+		TimerEvent ev;
 		if (m_timerQueue.try_pop(ev)) {
 			if (ev.m_executeTime > currentTime) {
 				m_timerQueue.push(ev);
@@ -330,7 +333,7 @@ void GameServer::TimerThread(HANDLE hiocp)
 			}
 			switch (ev.m_type)
 			{
-			case Event::RANDOM_MOVE:
+			case TimerEvent::RANDOM_MOVE:
 				EXP_OVER* over = new EXP_OVER;
 				over->m_compType = COMP_TYPE::OP_NPC_MOVE;
 				memcpy(over->m_sendMsg, &ev.m_eventMsg, sizeof(ev.m_eventMsg));
