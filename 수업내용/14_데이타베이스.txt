@@ -10,6 +10,47 @@
 	  - DB2, Oracle, MySQL, MSSQL
 	. Object model
 
+게임에서 많이 사용되는 DB
+- CISAM (C indexed Sequential Access Method)
+	. DB가 아닌 단순한 파일 시스템
+- MySQL -> Maria DB
+	. Free Software
+	. Simple but fast, 리눅스 운영체제에서 많이 사용
+- MSSQL
+	. Microsoft, 한국에서 가장 많이 사용
+- Oracle
+	. 비싸다. 수출이 어렵다
+- Memory DB
+	. 고속 자료처리 가능, memcached
+- NoSQL
+	. 자료의 분산, Cloud에 특화, Transaction 처리 곤란
+	. HBase, mongo-db, Redis
+
+왜 Data를 보조 기억장치에 저장하는가?
+- 데이터의 크기
+	. 서버 프로그램이 모든 데이터를 다 메모리에 갖고 있을 수 없다.
+- 데이터 보존
+	. 서버가 종료되어도 게임 데이터가 남아 있어야 한다.
+
+왜 DB를 사용하는가 : 안정성과 효율성
+	. 상용 데이터베이스보다 데이터 관리를 더 잘하는 프로그램을 짤 수 있는가
+
+DB를 쓰면 좋은 점
+- 다른 프로그램으로도 데이터를 다룰 수 있다.
+- 각종 툴이나 Browser를 사용할 수 있다.
+
+DB의 단점
+- 잘 모르는 Black-box
+	. 잘 모르는 상태에서 사용하면 풀기 어려운 예기치 않은 문제를 만날 수 있다.
+
+필수 구현 요소
+- 저장소 : 하드디스크, SSD, 메모리
+	. 인덱스를 통한 고속 검색
+- 트랜잭션과 동시성
+- 복제
+	. 안정성, 부하 분산
+- 보안
+
 데이터 베이스의 접속 및 사용
 - 네트워크를 통한 접속
 	. Text Based Socket
@@ -91,4 +132,12 @@ ODBC (Open DataBase Connectivity)
 - C++에서 SQL을 사용하기 위한 표준
 
 Stored Procedure (내장함수)
-- 
+- Stored Procedure를 사용하지 않고 SQL을 직접 사용하는 것은 죄악
+- 일련의 동작들을 SQL로 프로그래밍 해서 DB서버에 저장해 놓은 것
+- 장점
+	. 성능 향상 : Pre Compile, Pre Scheduling
+	. 보안
+	. Transaction 구현
+	. 네트워크 트래픽 감소
+- 사용법
+	. EXEC proc_name

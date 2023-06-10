@@ -22,6 +22,7 @@ mono_crash.*
 *.pdf
 *.png
 *.ttf
+*.bmp
 
 # Build results
 [Dd]ebug/
