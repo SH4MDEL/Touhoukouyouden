@@ -1,8 +1,23 @@
 Test의 필요성
 - bug 없는 프로그램을 만들기 위해
+
 MMORPG 게임 고유의 Test
 - 부하 테스트 (stress test)
 - 성능 측정 (동접, hotspot)
+
+Stress Test
+- 많은 인원이 동시에 접속하여 Test
+- 적은 인원 Test시에는 보이지 않았던 Bug들을 발견할 수 있다.
+	. 특히 멀티쓰레드 버그
+- 서버 프로그램의 Bottle Nect을 발견할 수 있다.
+	. DB - 쿼리 최적화, 캐시서버두기, nospl로 바꾸기, 하드디스크를 ssd로 바꾸기 등등..
+	. Network Overhead - 패킷 크기가 큰지, 패킷을 자주 보내는지 등
+	. Memory Allocation Overhead - 메모리 많이 꼽기 등
+	. NPC AI Overhead - 최적화, ai를 별도의 서버로 돌리기 등
+
+CPU Bottle Nect -> 프로파일러로 어디서 CPU를 많이 사용했나 확인한다.
+Network Bottle Nect -> 버퍼에 데이터가 쌓이는 것을 확인한다.
+Database Bottle Nect -> 데이터베이스 Request 큐가 얼마나 쌓여있나 확인한다.
 
 Test의 단계
 - 작성자 테스트, QA 테스트
@@ -15,17 +30,6 @@ Test의 단계
 - 오픈 베타 테스트
 	. 모든 사람에게 공개해서 테스트
 	. 오픈 베타 테스트 중 이상이 없으면 그대로 상용화
-
-Stress Test
-- 많은 인원이 동시에 접속하여 Test
-- 적은 인원 Test시에는 보이지 않았던 bug들을 발견할 수 있다.
-	. 특히 멀티쓰레드 버그
-- 서버 프로그램의 bottle-nect을 발견할 수 있다.
-	. DB
-	  쿼리 최적화, 캐시서버두기, nosql로 바꾸기, 하드를 ssd로 바꾸기 등..
-	. Network Overhead
-	. Memory Allocation Overhead
-	. NPC AI Overhead
 
 Stress Test의 문제
 - 많은 인원의 동원이 쉽지 않다.
