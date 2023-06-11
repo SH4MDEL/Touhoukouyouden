@@ -33,16 +33,19 @@ int main()
 		addr_size + 16, addr_size + 16, 0, &g_expOverlapped.m_overlapped);
 
 	thread timerThread{ TimerThread, g_iocp };
+	thread dbThread{ DatabaseThread, g_iocp };
 
 	vector<thread> workerThreads;
 	auto numThreads = thread::hardware_concurrency();
 	for (UINT i = 0; i < numThreads; ++i) {
 		workerThreads.emplace_back(WorkerThread, g_iocp);
 	}
+
 	for (auto& thread : workerThreads) {
 		thread.join();
 	}
 	timerThread.join();
+	dbThread.join();
 
 	closesocket(g_serverSocket);
 	WSACleanup();
@@ -56,7 +59,7 @@ void WorkerThread(HANDLE hiocp)
 		WSAOVERLAPPED* overlapped = nullptr;
 
 		BOOL ret = GetQueuedCompletionStatus(hiocp, &received, &key, &overlapped, INFINITE);
-		EXP_OVER* expOverlapped = reinterpret_cast<EXP_OVER*>(overlapped);
+		EXPOVERLAPPED* expOverlapped = reinterpret_cast<EXPOVERLAPPED*>(overlapped);
 
 		if (!ret) {
 			if (expOverlapped->m_compType == COMP_TYPE::OP_ACCEPT) {
@@ -147,7 +150,7 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		case OP_NPC_MOVE:
+		case TIMER_NPC_MOVE:
 		{
 			g_gameServer.MoveNPC(key);
 			bool activate = false;
@@ -182,11 +185,11 @@ void WorkerThread(HANDLE hiocp)
 				int* targetid = reinterpret_cast<int*>(expOverlapped->m_sendMsg + sizeof(UINT));
 				int moveCount = --(*sendMsg);
 				if (moveCount > 0) {
-					g_gameServer.AddTimer(key, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
+					g_gameServer.AddTimerEvent(key, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
 				}
 				else {
-					EXP_OVER* expOverlapped = new EXP_OVER;
-					expOverlapped->m_compType = OP_NPC_BYE;
+					EXPOVERLAPPED* expOverlapped = new EXPOVERLAPPED;
+					expOverlapped->m_compType = TIMER_NPC_BYE;
 					memcpy(expOverlapped->m_sendMsg, targetid, sizeof(UINT));
 					PostQueuedCompletionStatus(g_iocp, 1, key, &expOverlapped->m_overlapped);
 					g_gameServer.SleepNPC(key);
@@ -198,7 +201,7 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		case OP_NPC_HELLO:
+		case TIMER_NPC_HELLO:
 		{
 			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
@@ -212,7 +215,7 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		case OP_NPC_BYE:
+		case TIMER_NPC_BYE:
 		{
 			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
@@ -226,44 +229,34 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		}
-	}
-}
 
-void ProcessPacket(UINT cid, CHAR* packetBuf)
-{
-	switch (packetBuf[1])
-	{
-	case CS_PACKET_LOGIN:
-	{
-		// 새로 플레이어 들어옴
-		cs_packet_login* pk = reinterpret_cast<cs_packet_login*>(packetBuf);
-#ifdef NETWORK_DEBUG
-		cout << "CS_PACKET_LOGIN 수신" << endl;
-#endif
-		// 해당 ID 및 패스워드가 데이터베이스에 존재함
-		if (Database::GetInstance().Login(cid, pk->id, pk->password)) {
+		case DB_LOGIN_OK:
+		{
+			UINT* cid = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
+			DataBaseUserInfo* userinfo = 
+				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
+
 			{
 				sc_packet_login_confirm sendpk;
 				sendpk.size = sizeof(sc_packet_login_confirm);
 				sendpk.type = SC_PACKET_LOGIN_CONFIRM;
-				sendpk.id = cid;
-				g_gameServer.GetClient(cid)->DoSend(&sendpk);
-				strcpy_s(g_gameServer.GetClient(cid)->m_name, pk->name);
+				sendpk.id = *cid;
+				g_gameServer.GetClient(*cid)->DoSend(&sendpk);
+				strcpy_s(g_gameServer.GetClient(*cid)->m_name, userinfo->id);
 #ifdef NETWORK_DEBUG
 				cout << "SC_PACKET_LOGIN_CONFIRM 송신 - ID : " << (int)sendpk.id << endl;
 #endif
 				{
-					unique_lock<mutex> lock(g_gameServer.GetClient(cid)->m_mutex);
-					g_gameServer.GetClient(cid)->m_state = OBJECT::INGAME;
+					unique_lock<mutex> lock(g_gameServer.GetClient(*cid)->m_mutex);
+					g_gameServer.GetClient(*cid)->m_state = OBJECT::INGAME;
 				}
 
 			}
 
 			// 섹터 안에 있는 오브젝트의 ID를 담음.
 			unordered_set<int> newViewList;
-			short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
-			short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
+			short sectorX = g_gameServer.GetClient(*cid)->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = g_gameServer.GetClient(*cid)->m_position.y / (VIEW_RANGE * 2);
 			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 			// 주변 9개의 섹터 전부 조사
@@ -285,27 +278,54 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 							if (g_gameServer.GetNPC(id)->m_state != OBJECT::INGAME) continue;
 						}
 					}
-					if (!g_gameServer.CanSee(cid, id)) continue;
+					if (!g_gameServer.CanSee(*cid, id)) continue;
 
 					// 일단 나한테 전송
-					g_gameServer.GetClient(cid)->SendAddPlayer(id);
+					g_gameServer.GetClient(*cid)->SendAddPlayer(id);
 					// 상대는 NPC가 아닐 경우 전송
-					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
-					else if (g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
+					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(*cid);
+					else if (g_gameServer.IsSamePosition(id, *cid)) g_gameServer.WakeupNPC(id, *cid);
 				}
 				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 			}
+			delete expOverlapped;
+			break;
 		}
-		// 존재하지 않음
-		else {
+		case DB_LOGIN_FAIL:
+		{
+			UINT* cid = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
+			DataBaseUserInfo* userinfo =
+				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
+
 			sc_packet_login_fail sendpk;
 			sendpk.size = sizeof(sc_packet_login_fail);
 			sendpk.type = SC_PACKET_LOGIN_FAIL;
-			g_gameServer.GetClient(cid)->DoSend(&sendpk);
+			g_gameServer.GetClient(*cid)->DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
 			cout << "SC_PACKET_LOGIN_FAIL 송신 - ID : " << cid << endl;
 #endif
+			delete expOverlapped;
+			break;
 		}
+		}
+	}
+}
+
+void ProcessPacket(UINT cid, CHAR* packetBuf)
+{
+	switch (packetBuf[1])
+	{
+	case CS_PACKET_LOGIN:
+	{
+		// 새로 플레이어 들어옴
+		cs_packet_login* pk = reinterpret_cast<cs_packet_login*>(packetBuf);
+#ifdef NETWORK_DEBUG
+		cout << "CS_PACKET_LOGIN 수신" << endl;
+#endif
+		Database::GetInstance().AddDatabaseEvent(DatabaseEvent{
+			(UINT)cid, DatabaseEvent::Type::LOGIN,
+			DataBaseUserInfo { pk->id, pk->password, -1, -1 }
+			});
 		break;
 	}
 	case CS_PACKET_MOVE:
@@ -397,4 +417,9 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 void TimerThread(HANDLE hiocp)
 {
 	g_gameServer.TimerThread(hiocp);
+}
+
+void DatabaseThread(HANDLE hiocp)
+{
+	Database::GetInstance().DatabaseThread(hiocp);
 }

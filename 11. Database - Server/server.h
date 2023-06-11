@@ -41,7 +41,7 @@ public:
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);
 
-	void AddTimer(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid);
+	void AddTimerEvent(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid);
 	void WakeupNPC(UINT id, UINT waker);
 	void SleepNPC(UINT id);
 	void MoveNPC(UINT id);

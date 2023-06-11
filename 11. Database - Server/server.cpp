@@ -91,8 +91,10 @@ void GameServer::ExitClient(UINT id)
 	g_sector[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].erase(id);
 	g_sectorLock[exitClient->m_position.y / (VIEW_RANGE * 2)][exitClient->m_position.x / (VIEW_RANGE * 2)].unlock();
 
-	Database::GetInstance().UpdateUserData(id, exitClient->m_position.x, exitClient->m_position.y);
-	Database::GetInstance().Logout(id);
+	Database::GetInstance().AddDatabaseEvent(DatabaseEvent{
+		(UINT)exitClient->m_id, DatabaseEvent::Type::LOGOUT, 
+		DataBaseUserInfo{"","", exitClient->m_position.x, exitClient->m_position.y }
+		});
 
 	for (UINT i = 0; i < MAX_USER; ++i) {
 		auto client = static_pointer_cast<CLIENT>(m_objects[i]);
@@ -174,15 +176,15 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
-void GameServer::AddTimer(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
+void GameServer::AddTimerEvent(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
 {
 	m_timerQueue.push( TimerEvent{id, type, executeTime, eventMsg, targetid } );
 }
 
 void GameServer::WakeupNPC(UINT id, UINT waker)
 {
-	EXP_OVER* expOverlapped = new EXP_OVER;
-	expOverlapped->m_compType = OP_NPC_HELLO;
+	EXPOVERLAPPED* expOverlapped = new EXPOVERLAPPED;
+	expOverlapped->m_compType = TIMER_NPC_HELLO;
 	memcpy(expOverlapped->m_sendMsg, &waker, sizeof(waker));
 	PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
 
@@ -334,8 +336,8 @@ void GameServer::TimerThread(HANDLE hiocp)
 			switch (ev.m_type)
 			{
 			case TimerEvent::RANDOM_MOVE:
-				EXP_OVER* over = new EXP_OVER;
-				over->m_compType = COMP_TYPE::OP_NPC_MOVE;
+				EXPOVERLAPPED* over = new EXPOVERLAPPED;
+				over->m_compType = COMP_TYPE::TIMER_NPC_MOVE;
 				memcpy(over->m_sendMsg, &ev.m_eventMsg, sizeof(ev.m_eventMsg));
 				memcpy(over->m_sendMsg + sizeof(ev.m_eventMsg), &ev.m_targetid, sizeof(ev.m_targetid));
 				

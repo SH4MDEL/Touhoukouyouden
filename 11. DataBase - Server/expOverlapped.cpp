@@ -1,6 +1,6 @@
-#include "exp_over.h"
+#include "expOverlapped.h"
 
-EXP_OVER::EXP_OVER()
+EXPOVERLAPPED::EXPOVERLAPPED()
 {
 	m_wsaBuf.len = BUFSIZE;
 	m_wsaBuf.buf = m_sendMsg;
@@ -9,7 +9,7 @@ EXP_OVER::EXP_OVER()
 	m_compType = COMP_TYPE::OP_RECV;
 }
 
-EXP_OVER::EXP_OVER(char* packet)
+EXPOVERLAPPED::EXPOVERLAPPED(char* packet)
 {
 	m_wsaBuf.len = packet[0];
 	m_wsaBuf.buf = m_sendMsg;

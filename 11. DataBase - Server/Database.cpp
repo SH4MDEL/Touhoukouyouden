@@ -51,9 +51,53 @@ Database::~Database()
     SQLFreeHandle(SQL_HANDLE_ENV, henv);
 }
 
-void Database::DatabaseThread()
+void Database::DatabaseThread(HANDLE hiocp)
 {
+    while (true)
+    {
+        DatabaseEvent ev;
+        if (m_dbQueue.try_pop(ev)) {
+            switch (ev.m_type)
+            {
+            case DatabaseEvent::LOGIN:
+            {
+                if (Login(ev.m_id, ev.m_dbInfo.id, ev.m_dbInfo.password)) {
+                    EXPOVERLAPPED* over = new EXPOVERLAPPED;
+                    over->m_compType = COMP_TYPE::DB_LOGIN_OK;
+                    memcpy(over->m_sendMsg, &ev.m_id, sizeof(ev.m_id));
+                    memcpy(over->m_sendMsg + sizeof(ev.m_id), &ev.m_dbInfo, sizeof(ev.m_dbInfo));
 
+                    // 완료 결과 Worker Thread에 통지
+                    PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+                }
+                else {
+                    EXPOVERLAPPED* over = new EXPOVERLAPPED;
+                    over->m_compType = COMP_TYPE::DB_LOGIN_FAIL;
+                    memcpy(over->m_sendMsg, &ev.m_id, sizeof(ev.m_id));
+                    PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+                }
+                break;
+            }
+            case DatabaseEvent::LOGOUT:
+            {
+                Logout(ev.m_id, ev.m_dbInfo.xPosition, ev.m_dbInfo.yPosition);
+                break;
+            }
+            case DatabaseEvent::UPDATE:
+            {
+                UpdateUserData(ev.m_id, ev.m_dbInfo.xPosition, ev.m_dbInfo.yPosition);
+                break;
+            }
+            }
+            continue;
+        }
+        this_thread::sleep_for(1ms);
+    }
+}
+
+void Database::AddDatabaseEvent(const DatabaseEvent& userInfo)
+{
+    m_dbQueue.push(userInfo);
 }
 
 bool Database::Login(UINT uid, const char* id, const char* password)
@@ -83,8 +127,6 @@ bool Database::Login(UINT uid, const char* id, const char* password)
             return false;
         }
         if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
-            // ID가 이미 접속중일경우 예외처리 해줘야함.
-            // 어떻게?
             g_gameServer.RegistClientPosition(uid, { (short)xPosition, (short)yPosition });
             handleLock.unlock();
             m_id.insert({ uid, id });
@@ -102,10 +144,9 @@ bool Database::Login(UINT uid, const char* id, const char* password)
     }
 }
 
-bool Database::Logout(UINT uid)
+bool Database::Logout(UINT uid, INT x, INT y)
 {
-    // 이미 id가 존재하지 않으면 로그아웃 실패
-    if (!m_id.count(uid)) return false;
+    UpdateUserData(uid, x, y);
 
     handleLock.lock();
     m_id.unsafe_erase(uid);

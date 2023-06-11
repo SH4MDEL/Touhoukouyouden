@@ -18,6 +18,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <concurrent_queue.h>
 #include <concurrent_priority_queue.h>
 #include <concurrent_unordered_map.h>
 #include <random>
@@ -37,8 +38,8 @@ class GameServer;
 extern GameServer	g_gameServer;
 extern SOCKET		g_serverSocket;
 extern SOCKET		g_clientSocket;
-class EXP_OVER;
-extern EXP_OVER     g_expOverlapped;
+class EXPOVERLAPPED;
+extern EXPOVERLAPPED     g_expOverlapped;
 extern mt19937		g_randomEngine;
 
 constexpr int MAX_USER = 20000;
@@ -48,7 +49,11 @@ constexpr int VIEW_RANGE = 5;
 extern array<array<unordered_set<int>, MAP_WIDTH / (VIEW_RANGE * 2) + 1>, MAP_HEIGHT / (VIEW_RANGE * 2) + 1> g_sector;
 extern array<array<mutex, MAP_WIDTH / (VIEW_RANGE * 2) + 1>, MAP_HEIGHT / (VIEW_RANGE * 2) + 1> g_sectorLock;
 
-enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_NPC_MOVE, OP_NPC_HELLO, OP_NPC_BYE };
+enum COMP_TYPE { 
+    OP_ACCEPT, OP_RECV, OP_SEND, 
+    TIMER_NPC_MOVE, TIMER_NPC_HELLO, TIMER_NPC_BYE,
+    DB_LOGIN_OK, DB_LOGIN_FAIL
+};
 
 namespace Move
 {

@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "object.h"
-#include "exp_over.h"
+#include "expOverlapped.h"
 #include "main.h"
 
 class CLIENT : public OBJECT
@@ -20,7 +20,7 @@ public:
 	void SendExitPlayer(INT id);
 
 public:
-	EXP_OVER			m_recvOver;
+	EXPOVERLAPPED			m_recvOver;
 	SOCKET				m_socket;
 
 	unordered_set<int>	m_viewList;

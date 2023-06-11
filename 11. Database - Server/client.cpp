@@ -18,7 +18,7 @@ void CLIENT::DoRecv()
 
 void CLIENT::DoSend(void* packet)
 {
-	EXP_OVER* send_over = new EXP_OVER(reinterpret_cast<char*>(packet));
+	EXPOVERLAPPED* send_over = new EXPOVERLAPPED(reinterpret_cast<char*>(packet));
 	WSASend(m_socket, &send_over->m_wsaBuf, 1, 0, 0, &send_over->m_overlapped, 0);
 }
 
