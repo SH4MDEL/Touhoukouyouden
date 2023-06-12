@@ -15,8 +15,8 @@ void MainScene::BuildObjects()
 	m_boardTexture = make_shared<sf::Texture>();
 	m_boardTexture->loadFromFile("Resource\\Chessboard.png");
 
-	m_pieceTexture = make_shared<sf::Texture>();
-	m_pieceTexture->loadFromFile("Resource\\Piece.png");
+	m_reimuIdle = make_shared<sf::Texture>();
+	m_reimuIdle->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\IDLE.png");
 
 	m_whiteTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
 	m_whiteTile->SetSpriteTexture(m_boardTexture, 0, 0, TILE_WIDTH, TILE_WIDTH);
@@ -102,15 +102,21 @@ void MainScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<
 void MainScene::AddPlayer(int id, sf::Vector2f position, const char* name)
 {
 	if (id == g_clientID) {
-		m_avatar = make_shared<Piece>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		m_avatar->SetSpriteTexture(m_pieceTexture, 0, 0, 64, 64);
+		m_avatar = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+		m_avatar->SetAnimationSet(AnimationObject::Idle, AnimationSet{
+			m_reimuIdle, sf::IntRect{0, 0, 94, 102},
+			sf::Vector2i{10, 1}, 0.1f, 0.f 
+		});
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
 		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
-		m_players[id] = make_shared<Piece>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		m_players[id]->SetSpriteTexture(m_pieceTexture, 0, 0, 64, 64);
+		m_players[id] = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+		m_players[id]->SetAnimationSet(AnimationObject::Idle, AnimationSet{
+			m_reimuIdle, sf::IntRect{0, 0, 94, 102},
+			sf::Vector2i{10, 1}, 0.1f, 0.f
+			});
 		m_players[id]->SetPosition(position);
 		m_players[id]->SetName(name);
 	}

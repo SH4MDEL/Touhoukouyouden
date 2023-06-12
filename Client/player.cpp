@@ -1,32 +1,33 @@
-#include "piece.h"
+#include "player.h"
 
-Piece::Piece(sf::Vector2f position, sf::Vector2f size) : Object(position, size),
-	m_chatStatue{ false }, m_chatTime {0.f}
+Player::Player(sf::Vector2f position, sf::Vector2f size) : AnimationObject(position, size),
+	m_chatStatus{ false }, m_chatTime {0.f}
 {
 }
 
-Piece::~Piece()
+Player::~Player()
 {
 }
 
-void Piece::Update(float timeElapsed)
+void Player::Update(float timeElapsed)
 {
-	if (m_chatStatue) {
+	AnimationObject::Update(timeElapsed);
+	if (m_chatStatus) {
 		m_chatTime += timeElapsed;
 		if (m_chatTime >= m_chatLifeTime) {
 			m_chatTime = 0.f;
-			m_chatStatue = false;
+			m_chatStatus = false;
 		}
 	}
 }
 
-void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
+void Player::Render(const shared_ptr<sf::RenderWindow>& window)
 {
-	float rx = (m_spritePosition.x - g_leftX) * TILE_WIDTH;
-	float ry = (m_spritePosition.y - g_topY) * TILE_WIDTH;
-	m_sprite.setPosition(rx, ry);
-	window->draw(m_sprite);
-	if (m_chatStatue) {
+	AnimationObject::Render(window);
+
+	float rx = (m_position.x - g_leftX) * TILE_WIDTH;
+	float ry = (m_position.y - g_topY) * TILE_WIDTH;
+	if (m_chatStatus) {
 		auto size = m_chat.getGlobalBounds();
 		m_chat.setPosition(rx + 32 - size.width / 2, ry - 20);
 		window->draw(m_chat);
@@ -38,7 +39,7 @@ void Piece::Render(const shared_ptr<sf::RenderWindow>& window)
 	}
 }
 
-void Piece::SetName(const char* name)
+void Player::SetName(const char* name)
 {
 	m_name.setFont(g_font);
 	m_name.setString(name);
@@ -46,9 +47,9 @@ void Piece::SetName(const char* name)
 	m_name.setStyle(sf::Text::Bold);
 }
 
-void Piece::SetChat(const char* chat)
+void Player::SetChat(const char* chat)
 {
-	m_chatStatue = true;
+	m_chatStatus = true;
 	m_chatTime = 0.f;
 	m_chat.setFont(g_font);
 	m_chat.setString(chat);

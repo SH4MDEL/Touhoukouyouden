@@ -35,8 +35,8 @@ void UIObject::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<s
 void UIObject::SetPosition(sf::Vector2f position)
 {
 	Object::SetPosition(position);
-	float xPos = m_spritePosition.x + (m_sprite.getLocalBounds().width * m_spriteSize.x / 2) - (m_text.getLocalBounds().width / 2);
-	float yPos = m_spritePosition.y + (m_sprite.getLocalBounds().height * m_spriteSize.y / 2) - (m_text.getLocalBounds().height);
+	float xPos = m_position.x + (m_sprite.getLocalBounds().width * m_size.x / 2) - (m_text.getLocalBounds().width / 2);
+	float yPos = m_position.y + (m_sprite.getLocalBounds().height * m_size.y / 2) - (m_text.getLocalBounds().height);
 	m_text.setPosition(xPos, yPos);
 }
 
@@ -87,7 +87,7 @@ void ButtonUIObject::Render(const shared_ptr<sf::RenderWindow>& window)
 {
 	if (!m_enable) return;
 
-	SetPosition(m_spritePosition);
+	SetPosition(m_position);
 
 	// 상태에 따라 다른 색으로 렌더링
 	if (m_type == Type::ACTIVE) {
@@ -116,8 +116,8 @@ void ButtonUIObject::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 	float buttonXPos = m_sprite.getPosition().x;
 	float buttonYPos = m_sprite.getPosition().y;
 
-	float buttonWidth = buttonXPos + m_sprite.getLocalBounds().width * m_spriteSize.x;
-	float buttonHeigth = buttonYPos + m_sprite.getLocalBounds().height * m_spriteSize.y;
+	float buttonWidth = buttonXPos + m_sprite.getLocalBounds().width * m_size.x;
+	float buttonHeigth = buttonYPos + m_sprite.getLocalBounds().height * m_size.y;
 
 	if (mouseX < buttonWidth && mouseX > buttonXPos && mouseY < buttonHeigth && mouseY > buttonYPos) {
 		// 마우스와 겹친 상태에서 클릭 발생
@@ -179,7 +179,7 @@ void InputTextBoxUI::Render(const shared_ptr<sf::RenderWindow>& window)
 {
 	if (!m_enable) return;
 
-	SetPosition(m_spritePosition);
+	SetPosition(m_position);
 
 	window->draw(m_sprite);
 	// 위치 지정
@@ -212,8 +212,8 @@ void InputTextBoxUI::OnProcessingMouseMessage(sf::Event inputEvent, const shared
 	float buttonXPos = m_sprite.getPosition().x;
 	float buttonYPos = m_sprite.getPosition().y;
 
-	float buttonWidth = buttonXPos + m_sprite.getLocalBounds().width * m_spriteSize.x;
-	float buttonHeigth = buttonYPos + m_sprite.getLocalBounds().height * m_spriteSize.y;
+	float buttonWidth = buttonXPos + m_sprite.getLocalBounds().width * m_size.x;
+	float buttonHeigth = buttonYPos + m_sprite.getLocalBounds().height * m_size.y;
 
 	if (inputEvent.type == sf::Event::MouseButtonPressed) {
 		// 클릭 발생 시 마우스가 버튼 위에 있음

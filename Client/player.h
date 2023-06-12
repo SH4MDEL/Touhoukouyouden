@@ -1,12 +1,12 @@
 #pragma once
 #include "object.h"
 
-class Piece : public Object
+class Player : public AnimationObject
 {
 public:
-	Piece() = default;
-	Piece(sf::Vector2f position, sf::Vector2f size);
-	~Piece() override;
+	Player() = default;
+	Player(sf::Vector2f position, sf::Vector2f size);
+	~Player() override;
 
 	virtual void Update(float timeElapsed) override;
 	virtual void Render(const shared_ptr<sf::RenderWindow>& window) override;
@@ -16,7 +16,7 @@ public:
 private:
 	sf::Text					m_name;
 	sf::Text					m_chat;
-	BOOL						m_chatStatue;
+	BOOL						m_chatStatus;
 	const FLOAT					m_chatLifeTime = 2.f;
 	FLOAT						m_chatTime;
 };

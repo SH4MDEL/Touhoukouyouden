@@ -138,7 +138,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainScene.cpp" />
     <ClCompile Include="object.cpp" />
-    <ClCompile Include="piece.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="singleton.cpp" />
     <ClCompile Include="stdafx.cpp" />
@@ -151,7 +151,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="mainScene.h" />
     <ClInclude Include="object.h" />
-    <ClInclude Include="piece.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="singleton.h" />
     <ClInclude Include="stdafx.h" />

@@ -1,7 +1,7 @@
 #pragma once
 #include "scene.h"
 #include "object.h"
-#include "piece.h"
+#include "player.h"
 
 class MainScene : public Scene
 {
@@ -29,11 +29,11 @@ private:
 
 private:
 	shared_ptr<sf::Texture>	m_boardTexture;
-	shared_ptr<sf::Texture>	m_pieceTexture;
+	shared_ptr<sf::Texture>	m_reimuIdle;
 
 	shared_ptr<Object> m_whiteTile;
 	shared_ptr<Object> m_blackTile;
 
-	shared_ptr<Piece> m_avatar;
-	unordered_map<INT, shared_ptr<Piece>> m_players;
+	shared_ptr<Player> m_avatar;
+	unordered_map<INT, shared_ptr<Player>> m_players;
 };

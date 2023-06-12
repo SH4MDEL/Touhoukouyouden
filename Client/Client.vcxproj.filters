@@ -69,7 +69,7 @@
     <ClCompile Include="ui.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
-    <ClCompile Include="piece.cpp">
+    <ClCompile Include="player.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,7 +89,7 @@
     <ClInclude Include="object.h">
       <Filter>헤더 파일\Object</Filter>
     </ClInclude>
-    <ClInclude Include="piece.h">
+    <ClInclude Include="player.h">
       <Filter>헤더 파일\Object</Filter>
     </ClInclude>
     <ClInclude Include="singleton.h">

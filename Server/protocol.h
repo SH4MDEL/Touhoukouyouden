@@ -1,6 +1,8 @@
 #pragma once
 #include <windows.h>
 
+#define NETWORK_DEBUG
+
 constexpr int		PORT_NUM = 4000;
 constexpr int		NAME_SIZE = 20;
 constexpr int		CHAT_SIZE = 200;
@@ -30,8 +32,6 @@ constexpr char		SC_MOVE_OBJECT = 5;
 constexpr char		SC_CHAT = 6;
 constexpr char		SC_LOGIN_OK = 7;
 constexpr char		SC_LOGIN_FAIL = 2;
-
-#define NETWORK_DEBUG
 
 #pragma pack(push, 1)
 
