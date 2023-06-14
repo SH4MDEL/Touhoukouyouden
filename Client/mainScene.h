@@ -22,15 +22,13 @@ public:
 
 	void Move(INT id, sf::Vector2f position);
 	void SetChat(INT id, const char* chat);
+	void SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<AnimationObject>& object);
 
 private:
 	virtual void BuildObjects() final;
 	virtual void DestroyObject() final;
 
 private:
-	shared_ptr<sf::Texture>	m_boardTexture;
-	shared_ptr<sf::Texture>	m_reimuIdle;
-
 	shared_ptr<Object> m_whiteTile;
 	shared_ptr<Object> m_blackTile;
 

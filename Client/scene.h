@@ -30,5 +30,8 @@ protected:
 
 protected:
 	Tag		m_tag;
+
+public:
+	unordered_map<string, shared_ptr<sf::Texture>> g_textures;
 };
 

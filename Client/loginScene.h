@@ -21,8 +21,6 @@ private:
 	virtual void DestroyObject() final;
 
 private:
-	shared_ptr<sf::Texture>	m_buttonTexture;
-
 	shared_ptr<ButtonUIObject>	m_gameStartUI;
 	shared_ptr<InputTextBoxUI>	m_idBox;
 	shared_ptr<InputTextBoxUI>	m_passwordBox;

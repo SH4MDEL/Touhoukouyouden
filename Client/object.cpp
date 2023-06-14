@@ -48,7 +48,7 @@ sf::Vector2f Object::GetPosition()
 
 
 AnimationObject::AnimationObject(sf::Vector2f position, sf::Vector2f size) : 
-	Object(position, size), m_state{State::Idle}
+	Object(position, size), m_state{AnimationState::Idle}
 {
 }
 
@@ -65,6 +65,13 @@ void AnimationObject::Update(float timeElapsed)
 		// 세로 끝이면서 가로 끝이면 초기로 돌린다.
 		if (m_animationSet[m_state].m_spriteRect.top / m_animationSet[m_state].m_spriteRect.height + 1 == m_animationSet[m_state].m_spriteNum.y &&
 			m_animationSet[m_state].m_spriteRect.left / m_animationSet[m_state].m_spriteRect.width + 1 == m_animationSet[m_state].m_spriteNum.x) {
+			// 공격 모션은 한 번만 재생하고 Idle로 돌린다.
+			if (m_state == AnimationState::Attack) {
+				SetState(AnimationState::Idle);
+			}
+			// 사망 모션은 반복하지 않고 마지막 이미지를 계속 출력한다.
+			else if (m_state == AnimationState::Die) return;
+
 			m_animationSet[m_state].m_spriteRect.top = 0;
 			m_animationSet[m_state].m_spriteRect.left = 0;
 		}
@@ -91,12 +98,12 @@ void AnimationObject::Render(const shared_ptr<sf::RenderWindow>& window)
 	window->draw(m_animationSet[m_state].m_sprite);
 }
 
-void AnimationObject::SetAnimationSet(State state, const AnimationSet& animationSet)
+void AnimationObject::SetAnimationSet(AnimationState state, const AnimationSet& animationSet)
 {
 	m_animationSet[state] = animationSet;
 }
 
-void AnimationObject::SetState(State state)
+void AnimationObject::SetState(AnimationState state)
 {
 	if (m_state != state) {
 		m_state = state;

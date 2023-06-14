@@ -27,12 +27,15 @@ struct AnimationSet
 {
 public:
 	AnimationSet() = default;
-	AnimationSet(const shared_ptr<sf::Texture>& texture, sf::IntRect spriteRect, sf::Vector2i spriteNum, float animationLifetime, float animationTime) :
-		m_spriteRect{ spriteRect }, m_spriteNum{ spriteNum }, m_animationLifetime{animationLifetime}, m_animationTime{animationTime}
+	AnimationSet(const shared_ptr<sf::Texture>& texture, sf::IntRect spriteRect, sf::Vector2i spriteNum,
+		float animationLifetime, float animationTime) :
+		m_spriteRect{ spriteRect }, m_spriteNum{ spriteNum },
+		m_animationLifetime{ animationLifetime }, m_animationTime{ animationTime }
 	{
 		m_sprite.setTexture(*(texture.get()));
 		m_sprite.setTextureRect(spriteRect);
 	}
+
 
 public:
 	sf::Sprite				m_sprite;
@@ -45,13 +48,6 @@ public:
 class AnimationObject : public Object
 {
 public:
-	enum State {
-		Idle,
-		Move,
-		Attack,
-		Count
-	};
-
 	AnimationObject() = default;
 	AnimationObject(sf::Vector2f position, sf::Vector2f size);
 	virtual ~AnimationObject() override;
@@ -59,10 +55,10 @@ public:
 	void Update(float timeElapsed) override;
 	void Render(const shared_ptr<sf::RenderWindow>& window) override;
 
-	void SetAnimationSet(State state, const AnimationSet& animationSet);
-	void SetState(State state);
+	void SetAnimationSet(AnimationState state, const AnimationSet& animationSet);
+	void SetState(AnimationState state);
 
 protected:
-	array<AnimationSet, State::Count>	m_animationSet;
-	State								m_state;
+	array<AnimationSet, AnimationState::Count>	m_animationSet;
+	AnimationState								m_state;
 };

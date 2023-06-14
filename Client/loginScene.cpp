@@ -21,12 +21,13 @@ LoginScene::~LoginScene()
 
 void LoginScene::BuildObjects()
 {
-	m_buttonTexture = make_shared<sf::Texture>();
-	m_buttonTexture->loadFromFile("Resource\\UI\\Button.png");
+	auto buttonTexture = make_shared<sf::Texture>();
+	buttonTexture->loadFromFile("Resource\\UI\\Button.png");
+	g_textures.insert({ "BUTTONTEXTURE", buttonTexture });
 
 	m_gameStartUI = make_shared<ButtonUIObject>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 0.8f, 0.5f });
 	m_gameStartUI->SetPosition(sf::Vector2f{ 100, 0 });
-	m_gameStartUI->SetSpriteTexture(m_buttonTexture, 0, 0, 278, 115);
+	m_gameStartUI->SetSpriteTexture(g_textures["BUTTONTEXTURE"], 0, 0, 278, 115);
 	m_gameStartUI->SetText("Login");
 	m_gameStartUI->SetTextFont(g_font);
 	m_gameStartUI->SetTextColor(sf::Color(255, 255, 255));
@@ -47,13 +48,13 @@ void LoginScene::BuildObjects()
 
 	m_idBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 100.f }, sf::Vector2f{ 2.f, 1.f }, 20);
 	m_idBox->SetPosition(sf::Vector2f{ 200, 100 });
-	m_idBox->SetSpriteTexture(m_buttonTexture, 0, 0, 278, 115);
+	m_idBox->SetSpriteTexture(g_textures["BUTTONTEXTURE"], 0, 0, 278, 115);
 	m_idBox->SetTextFont(g_font);
 	m_idBox->SetTextColor(sf::Color(255, 255, 255));
 
 	m_passwordBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 200.f, 200.f }, sf::Vector2f{ 2.f, 1.f }, 20);
 	m_passwordBox->SetPosition(sf::Vector2f{ 200, 215 });
-	m_passwordBox->SetSpriteTexture(m_buttonTexture, 0, 0, 278, 115);
+	m_passwordBox->SetSpriteTexture(g_textures["BUTTONTEXTURE"], 0, 0, 278, 115);
 	m_passwordBox->SetTextFont(g_font);
 	m_passwordBox->SetTextColor(sf::Color(255, 255, 255));
 }
@@ -66,7 +67,6 @@ void LoginScene::DestroyObject()
 void LoginScene::Update(float timeElapsed)
 {
 	if (g_clickEvent) {
-		cout << "asdf" << endl;
 		g_clickEvent();
 		g_clickEvent = nullptr;
 	}

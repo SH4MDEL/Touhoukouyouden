@@ -33,6 +33,20 @@ constexpr char		SC_CHAT = 6;
 constexpr char		SC_LOGIN_OK = 7;
 constexpr char		SC_LOGIN_FAIL = 2;
 
+enum CharacterInfo {
+	HAKUREI_REIMU,
+	KONPAKU_YOUMU,
+	PATCHOULI_KNOWLEDGE
+};
+
+enum AnimationState {
+	Idle,
+	Walk,
+	Attack,
+	Die,
+	Count
+};
+
 #pragma pack(push, 1)
 
 struct Short2 {

@@ -12,16 +12,57 @@ MainScene::~MainScene()
 
 void MainScene::BuildObjects()
 {
-	m_boardTexture = make_shared<sf::Texture>();
-	m_boardTexture->loadFromFile("Resource\\Chessboard.png");
+	auto mapTexture = make_shared<sf::Texture>();
+	mapTexture->loadFromFile("Resource\\Chessboard.png");
 
-	m_reimuIdle = make_shared<sf::Texture>();
-	m_reimuIdle->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\IDLE.png");
+	g_textures.insert({ "MAP", mapTexture });
+
+	auto reimuIdleTexture = make_shared<sf::Texture>();
+	reimuIdleTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\IDLE.png");
+	auto reimuWalkTexture = make_shared<sf::Texture>();
+	reimuWalkTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\WALK.png");
+	auto reimuAttackTexture = make_shared<sf::Texture>();
+	reimuAttackTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\ATTACK.png");
+	auto reimuDieTexture = make_shared<sf::Texture>();
+	reimuDieTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\DIE.png");
+
+	g_textures.insert({ "REIMU_IDLE", reimuIdleTexture });
+	g_textures.insert({ "REIMU_WALK", reimuWalkTexture });
+	g_textures.insert({ "REIMU_ATTACK", reimuAttackTexture });
+	g_textures.insert({ "REIMU_DIE", reimuDieTexture });
+
+	auto youmuIdleTexture = make_shared<sf::Texture>();
+	youmuIdleTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\IDLE.png");
+	auto youmuWalkTexture = make_shared<sf::Texture>();
+	youmuWalkTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\WALK.png");
+	auto youmuAttackTexture = make_shared<sf::Texture>();
+	youmuAttackTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\ATTACK.png");
+	auto youmuDieTexture = make_shared<sf::Texture>();
+	youmuDieTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\DIE.png");
+
+	g_textures.insert({ "YOUMU_IDLE", youmuIdleTexture });
+	g_textures.insert({ "YOUMU_WALK", youmuWalkTexture });
+	g_textures.insert({ "YOUMU_ATTACK", youmuAttackTexture });
+	g_textures.insert({ "YOUMU_DIE", youmuDieTexture });
+
+	auto patchouliIdleTexture = make_shared<sf::Texture>();
+	patchouliIdleTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\IDLE.png");
+	auto patchouliWalkTexture = make_shared<sf::Texture>();
+	patchouliWalkTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\WALK.png");
+	auto patchouliAttackTexture = make_shared<sf::Texture>();
+	patchouliAttackTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\ATTACK.png");
+	auto patchouliDieTexture = make_shared<sf::Texture>();
+	patchouliDieTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\DIE.png");
+
+	g_textures.insert({ "PATCHOULI_IDLE", patchouliIdleTexture });
+	g_textures.insert({ "PATCHOULI_WALK", patchouliWalkTexture });
+	g_textures.insert({ "PATCHOULI_ATTACK", patchouliAttackTexture });
+	g_textures.insert({ "PATCHOULI_DIE", patchouliDieTexture });
 
 	m_whiteTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-	m_whiteTile->SetSpriteTexture(m_boardTexture, 0, 0, TILE_WIDTH, TILE_WIDTH);
+	m_whiteTile->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
 	m_blackTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-	m_blackTile->SetSpriteTexture(m_boardTexture, 129, 0, TILE_WIDTH, TILE_WIDTH);
+	m_blackTile->SetSpriteTexture(g_textures["MAP"], 129, 0, TILE_WIDTH, TILE_WIDTH);
 }
 
 void MainScene::DestroyObject()
@@ -103,20 +144,14 @@ void MainScene::AddPlayer(int id, sf::Vector2f position, const char* name)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		m_avatar->SetAnimationSet(AnimationObject::Idle, AnimationSet{
-			m_reimuIdle, sf::IntRect{0, 0, 94, 102},
-			sf::Vector2i{10, 1}, 0.1f, 0.f 
-		});
+		SetAnimationInfo(CharacterInfo::HAKUREI_REIMU, m_avatar);
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
 		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
 		m_players[id] = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		m_players[id]->SetAnimationSet(AnimationObject::Idle, AnimationSet{
-			m_reimuIdle, sf::IntRect{0, 0, 94, 102},
-			sf::Vector2i{10, 1}, 0.1f, 0.f
-			});
+		SetAnimationInfo(CharacterInfo::PATCHOULI_KNOWLEDGE, m_players[id]);
 		m_players[id]->SetPosition(position);
 		m_players[id]->SetName(name);
 	}
@@ -145,6 +180,67 @@ void MainScene::SetChat(INT id, const char* chat)
 	}
 	else {
 		m_players[id]->SetChat(chat);
+	}
+}
+
+void MainScene::SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<AnimationObject>& object)
+{
+	switch (characterInfo)
+	{
+	case HAKUREI_REIMU:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["REIMU_IDLE"], sf::IntRect{0, 0, 94, 102},
+			sf::Vector2i{10, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["REIMU_WALK"], sf::IntRect{0, 0, 110, 105},
+			sf::Vector2i{8, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
+			g_textures["REIMU_ATTACK"], sf::IntRect{0, 0, 102, 100},
+			sf::Vector2i{11, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["REIMU_DIE"], sf::IntRect{0, 0, 104, 102},
+			sf::Vector2i{11, 1}, 0.1f, 0.f
+			});
+		break;
+	case KONPAKU_YOUMU:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["YOUMU_IDLE"], sf::IntRect{0, 0, 108, 82},
+			sf::Vector2i{8, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["YOUMU_WALK"], sf::IntRect{0, 0, 100, 82},
+			sf::Vector2i{10, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
+			g_textures["YOUMU_ATTACK"], sf::IntRect{0, 0, 122, 84},
+			sf::Vector2i{13, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["YOUMU_DIE"], sf::IntRect{0, 0, 110, 110},
+			sf::Vector2i{8, 1}, 0.1f, 0.f
+			});
+		break;
+	case PATCHOULI_KNOWLEDGE:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["PATCHOULI_IDLE"], sf::IntRect{0, 0, 56, 104},
+			sf::Vector2i{18, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["PATCHOULI_WALK"], sf::IntRect{0, 0, 46, 99},
+			sf::Vector2i{10, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
+			g_textures["PATCHOULI_ATTACK"], sf::IntRect{0, 0, 74, 106},
+			sf::Vector2i{11, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["PATCHOULI_DIE"], sf::IntRect{0, 0, 106, 82},
+			sf::Vector2i{10, 1}, 0.1f, 0.f
+			});
+		break;
 	}
 }
 
