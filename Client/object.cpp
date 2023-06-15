@@ -1,7 +1,7 @@
 #include "Object.h"
 
 Object::Object(sf::Vector2f position, sf::Vector2f size) : 
-	m_position(position), m_size(size) {}
+	m_position(position), m_size(size), m_flipped{ false } {}
 
 Object::~Object()
 {
@@ -38,6 +38,24 @@ void Object::SetSpriteTexture(const shared_ptr<sf::Texture>& texture, INT x, INT
 	// 이미 할당된 위치와 크기 적용
 	m_sprite.setPosition(m_position);
 	m_sprite.setScale(m_size);
+}
+
+void Object::SetSpriteFlip()
+{
+	if (!m_flipped) {
+		auto flipSize = m_size;
+		flipSize.x *= -1;
+		m_sprite.setScale(flipSize);
+		m_flipped = true;
+	}
+}
+
+void Object::SetStriteUnflip()
+{
+	if (m_flipped) {
+		m_sprite.setScale(m_size);
+		m_flipped = false;
+	}
 }
 
 sf::Vector2f Object::GetPosition()
@@ -94,8 +112,31 @@ void AnimationObject::Render(const shared_ptr<sf::RenderWindow>& window)
 {
 	float rx = (m_position.x - g_leftX) * TILE_WIDTH;
 	float ry = (m_position.y - g_topY) * TILE_WIDTH;
+	if (m_flipped) rx += (float)m_animationSet[m_state].m_spriteRect.width / 2.f;
 	m_animationSet[m_state].m_sprite.setPosition(rx, ry);
 	window->draw(m_animationSet[m_state].m_sprite);
+}
+
+void AnimationObject::SetSpriteFlip()
+{
+	if (!m_flipped) {
+		auto flipSize = m_size;
+		flipSize.x *= -1;
+		for (auto& animationSet : m_animationSet) {
+			animationSet.m_sprite.setScale(flipSize);
+		}
+		m_flipped = true;
+	}
+}
+
+void AnimationObject::SetSpriteUnflip()
+{
+	if (m_flipped) {
+		for (auto& animationSet : m_animationSet) {
+			animationSet.m_sprite.setScale(m_size);
+		}
+		m_flipped = false;
+	}
 }
 
 void AnimationObject::SetAnimationSet(AnimationState state, const AnimationSet& animationSet)

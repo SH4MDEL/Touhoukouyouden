@@ -26,6 +26,7 @@
 #include <windows.h>  
 #include <sqlext.h>  
 #include <locale.h>
+#include <fstream>
 using namespace std;
 #define endl "\n"
 

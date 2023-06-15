@@ -133,7 +133,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="animation.cpp" />
     <ClCompile Include="framework.cpp" />
     <ClCompile Include="loginScene.cpp" />
     <ClCompile Include="main.cpp" />
@@ -147,7 +146,6 @@
     <ClCompile Include="ui.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="animation.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="loginScene.h" />
     <ClInclude Include="main.h" />

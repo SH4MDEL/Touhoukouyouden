@@ -4,6 +4,7 @@ int main()
 {
 	// 데이터베이스와 연결
 	Database::GetInstance();
+	g_gameServer.LoadMap();
 	// NPC 초기화
 	g_gameServer.InitializeNPC();
 
@@ -237,20 +238,32 @@ void WorkerThread(HANDLE hiocp)
 				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
 
 			{
-				sc_packet_login_confirm sendpk;
-				sendpk.size = sizeof(sc_packet_login_confirm);
+				SC_LOGIN_OK_PACKET sendpk;
+				sendpk.size = sizeof(SC_LOGIN_OK_PACKET);
 				sendpk.type = SC_LOGIN_OK;
-				sendpk.id = *cid;
 				g_gameServer.GetClient(*cid)->DoSend(&sendpk);
 				strcpy_s(g_gameServer.GetClient(*cid)->m_name, userinfo->id);
 #ifdef NETWORK_DEBUG
-				cout << "SC_LOGIN_OK 송신 - ID : " << (int)sendpk.id << endl;
+				cout << "SC_LOGIN_OK 송신" << endl;
 #endif
 				{
 					unique_lock<mutex> lock(g_gameServer.GetClient(*cid)->m_mutex);
 					g_gameServer.GetClient(*cid)->m_state = OBJECT::INGAME;
 				}
-
+			}
+			{
+				SC_LOGIN_INFO_PACKET sendpk;
+				sendpk.size = sizeof(SC_LOGIN_INFO_PACKET);
+				sendpk.type = SC_LOGIN_INFO;
+				sendpk.id = *cid;
+				//sendpk.hp;
+				//sendpk.max_hp;
+				//sendpk.exp;
+				//sendpk.level;
+				g_gameServer.GetClient(*cid)->DoSend(&sendpk);
+#ifdef NETWORK_DEBUG
+				cout << "SC_LOGIN_INFO 송신" << endl;
+#endif
 			}
 
 			// 섹터 안에 있는 오브젝트의 ID를 담음.
@@ -297,8 +310,8 @@ void WorkerThread(HANDLE hiocp)
 			DataBaseUserInfo* userinfo =
 				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
 
-			sc_packet_login_fail sendpk;
-			sendpk.size = sizeof(sc_packet_login_fail);
+			SC_LOGIN_FAIL_PACKET sendpk;
+			sendpk.size = sizeof(SC_LOGIN_FAIL_PACKET);
 			sendpk.type = SC_LOGIN_FAIL;
 			g_gameServer.GetClient(*cid)->DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
@@ -313,12 +326,12 @@ void WorkerThread(HANDLE hiocp)
 
 void ProcessPacket(UINT cid, CHAR* packetBuf)
 {
-	switch (packetBuf[1])
+	switch (packetBuf[2])
 	{
 	case CS_LOGIN:
 	{
 		// 새로 플레이어 들어옴
-		cs_packet_login* pk = reinterpret_cast<cs_packet_login*>(packetBuf);
+		CS_LOGIN_PACKET* pk = reinterpret_cast<CS_LOGIN_PACKET*>(packetBuf);
 #ifdef NETWORK_DEBUG
 		cout << "CS_LOGIN 수신" << endl;
 #endif
@@ -330,7 +343,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 	}
 	case CS_MOVE:
 	{
-		cs_packet_move* pk = reinterpret_cast<cs_packet_move*>(packetBuf);
+		CS_MOVE_PACKET* pk = reinterpret_cast<CS_MOVE_PACKET*>(packetBuf);
 #ifdef NETWORK_DEBUG
 		cout << "CS_MOVE 수신" << endl;
 #endif

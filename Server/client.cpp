@@ -40,8 +40,8 @@ void CLIENT::SendAddPlayer(INT id)
 	m_viewList.insert(id);
 	m_viewLock.unlock();
 
-	sc_packet_add_player sendpk;
-	sendpk.size = sizeof(sc_packet_add_player);
+	SC_ADD_OBJECT_PACKET sendpk;
+	sendpk.size = sizeof(SC_ADD_OBJECT_PACKET);
 	sendpk.type = SC_ADD_OBJECT;
 	sendpk.id = id;
 	if (id < MAX_USER) {
@@ -69,17 +69,17 @@ void CLIENT::SendObjectInfo(INT id)
 	}
 	m_viewLock.unlock();
 
-	sc_packet_object_info sendpk;
-	sendpk.size = sizeof(sc_packet_object_info);
+	SC_MOVE_OBJECT_PACKET sendpk;
+	sendpk.size = sizeof(SC_MOVE_OBJECT_PACKET);
 	sendpk.type = SC_MOVE_OBJECT;
 	sendpk.id = id;
 	if (id < MAX_USER) {
 		sendpk.coord = g_gameServer.GetClient((UINT)id)->m_position;
-		sendpk.moveTime = g_gameServer.GetClient(id)->m_lastMoveTime;
+		sendpk.move_time = g_gameServer.GetClient(id)->m_lastMoveTime;
 	}
 	else {
 		sendpk.coord = g_gameServer.GetNPC((UINT)id)->m_position;
-		sendpk.moveTime = 0;
+		sendpk.move_time = 0;
 	}
 
 	DoSend(&sendpk);
@@ -100,8 +100,8 @@ void CLIENT::SendChat(INT id, const char* message)
 	}
 	m_viewLock.unlock();
 
-	sc_packet_chat packet;
-	packet.size = sizeof(sc_packet_object_info);
+	SC_CHAT_PACKET packet;
+	packet.size = sizeof(SC_MOVE_OBJECT_PACKET);
 	packet.type = SC_CHAT;
 	packet.id = id;
 	strcpy_s(packet.message, message);
@@ -124,8 +124,8 @@ void CLIENT::SendExitPlayer(INT id)
 	m_viewList.erase(id);
 	m_viewLock.unlock();
 
-	sc_packet_exit_player packet;
-	packet.size = sizeof(sc_packet_exit_player);
+	SC_REMOVE_OBJECT_PACKET packet;
+	packet.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 	packet.type = SC_REMOVE_OBJECT;
 	packet.id = id;
 	DoSend(&packet);

@@ -15,12 +15,17 @@ public:
 	virtual void SetSize(sf::Vector2f size);
 	virtual void SetSpriteTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, INT dx, INT dy);
 
+	virtual void SetSpriteFlip();
+	virtual void SetStriteUnflip();
+
 	sf::Vector2f GetPosition();
 
 protected:
 	sf::Sprite				m_sprite;
 	sf::Vector2f			m_position;
 	sf::Vector2f			m_size;
+	
+	bool					m_flipped;
 };
 
 struct AnimationSet
@@ -52,8 +57,11 @@ public:
 	AnimationObject(sf::Vector2f position, sf::Vector2f size);
 	virtual ~AnimationObject() override;
 
-	void Update(float timeElapsed) override;
+	virtual void Update(float timeElapsed) override;
 	void Render(const shared_ptr<sf::RenderWindow>& window) override;
+
+	virtual void SetSpriteFlip();
+	virtual void SetSpriteUnflip();
 
 	void SetAnimationSet(AnimationState state, const AnimationSet& animationSet);
 	void SetState(AnimationState state);

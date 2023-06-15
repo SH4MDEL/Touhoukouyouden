@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include <utility>
 
 #define NETWORK_DEBUG
 
@@ -31,13 +32,35 @@ constexpr char		SC_REMOVE_OBJECT = 4;
 constexpr char		SC_MOVE_OBJECT = 5;
 constexpr char		SC_CHAT = 6;
 constexpr char		SC_LOGIN_OK = 7;
-constexpr char		SC_LOGIN_FAIL = 2;
+constexpr char		SC_LOGIN_FAIL = 8;
+constexpr char		SC_STAT_CHANGE = 9;
 
-enum CharacterInfo {
-	HAKUREI_REIMU,
-	KONPAKU_YOUMU,
-	PATCHOULI_KNOWLEDGE
-};
+
+// 오브젝트들의 외형을 결정하는 시리얼 넘버이다.
+// 여러 오브젝트들이 같은 시리얼을 가질 수도 있다.
+namespace Serial {
+	namespace Character {
+		constexpr int HAKUREI_REIMU = 1;
+		constexpr int KONPAKU_YOUMU = 2;
+		constexpr int PATCHOULI_KNOWLEDGE = 3;
+
+		constexpr int END = 1000;
+	};
+
+	namespace NPC {
+		constexpr int NPC_A = Character::END + 1;
+		constexpr int NPC_B = Character::END + 2;
+		constexpr int NPC_C = Character::END + 3;
+
+		constexpr int END = Character::END + 1000;
+	}
+
+	namespace MonsterInfo {
+		constexpr int SHROOM = NPC::END + 1;
+		constexpr int SLIME = NPC::END + 2;
+		constexpr int MUSHROOM = NPC::END + 3;
+	};
+}
 
 enum AnimationState {
 	Idle,
@@ -45,6 +68,44 @@ enum AnimationState {
 	Attack,
 	Die,
 	Count
+};
+
+namespace TileInfo {
+	constexpr int UNDEFINED_NONBLOCK	= 0x01;
+	constexpr int UNDEFINED_BLOCK		= 0x02;
+	constexpr int HENESYS_NONBLOCK		= 0x04;
+	constexpr int HENESYS_BLOCK			= 0x08;
+
+	constexpr int BLOCKING = UNDEFINED_BLOCK | HENESYS_BLOCK;
+	constexpr int NONBLOCKING = UNDEFINED_NONBLOCK | HENESYS_NONBLOCK;
+
+	constexpr int HENESYS = HENESYS_NONBLOCK | HENESYS_BLOCK;
+};
+
+namespace VillageBorder {
+	using namespace std;
+
+	constexpr pair<int, int> HENESYS_START				= { 900, 900 };
+	constexpr pair<int, int> HENESYS_END				= { 1100, 1100 };
+	constexpr pair<int, int> HENESYS_VILLAGE_START		= { 970, 970 };
+	constexpr pair<int, int> HENESYS_VILLAGE_END		= { 1030, 1030 };
+
+	constexpr pair<int, int> PERION_START				= { 700, 700 };
+	constexpr pair<int, int> PERION_END					= { 900, 900 };
+	constexpr pair<int, int> PERION_VILLAGE_START		= { 770, 770 };
+	constexpr pair<int, int> PERION_VILLAGE_END			= { 830, 830 };
+
+	constexpr bool InVillage(const pair<int, int>& position) {
+		if (position.first >= PERION_VILLAGE_START.first && position.first < PERION_VILLAGE_START.first &&
+			position.second >= PERION_VILLAGE_START.second && position.second < PERION_VILLAGE_START.second) {
+			return true;
+		}
+		if (position.first >= PERION_VILLAGE_START.first && position.first < PERION_VILLAGE_START.first &&
+			position.second >= PERION_VILLAGE_START.second && position.second < PERION_VILLAGE_START.second) {
+			return true;
+		}
+		return false;
+	}
 };
 
 #pragma pack(push, 1)
@@ -68,70 +129,119 @@ struct Short2 {
 	}
 };
 
-struct packet
+struct PACKET
 {
-	unsigned char size;
-	unsigned char type;
+	unsigned short size;
+	char type;
 };
 
 /*
  *  Client to Server
  */
 
-struct cs_packet_login : public packet
+struct CS_LOGIN_PACKET
 {
+	unsigned short size;
+	char type;
 	char name[NAME_SIZE];
 	char id[ID_SIZE];
 	char password[PASSWORD_SIZE];
 };
 
-struct cs_packet_move : public packet
+struct CS_MOVE_PACKET
 {
+	unsigned short size;
+	char type;
 	unsigned char direction;
-	UINT moveTime;
+	unsigned moveTime;
 };
 
-struct cs_packet_logout : public packet
+struct CS_CHAT_PACKET {
+	unsigned short size;			// 크기가 가변이다, mess가 작으면 size도 줄이자.
+	char	type;
+	char	mess[CHAT_SIZE];
+};
+
+struct CS_TELEPORT_PACKET {
+	unsigned short size;
+	char	type;
+};
+
+struct CS_LOGOUT_PACKET
 {
-	unsigned int id;
+	unsigned short size;
+	char type;
 };
 
 /*
  *  Server to Client
  */
 
-struct sc_packet_login_confirm : public packet
+struct SC_LOGIN_INFO_PACKET 
 {
+	unsigned short size;
+	char	type;
 	unsigned int id;
+	int		hp;
+	int		max_hp;
+	int		exp;
+	int		level;
+	Short2 coord;
 };
 
-struct sc_packet_login_fail : public packet
+struct SC_ADD_OBJECT_PACKET
 {
-};
-
-struct sc_packet_add_player : public packet
-{
+	unsigned short size;
+	char type;
 	unsigned int id;
 	Short2 coord;
 	char name[NAME_SIZE];
 };
 
-struct sc_packet_object_info : public packet
+struct SC_REMOVE_OBJECT_PACKET
 {
+	unsigned short size;
+	char type;
 	unsigned int id;
-	Short2 coord;
-	UINT moveTime;
 };
 
-struct sc_packet_chat : public packet
+struct SC_MOVE_OBJECT_PACKET
 {
+	unsigned short size;
+	char type;
+	unsigned int id;
+	Short2 coord;
+	UINT move_time;
+};
+
+struct SC_CHAT_PACKET
+{
+	unsigned short size;
+	char type;
 	unsigned int id;
 	char message[CHAT_SIZE];	// 가변 패킷 크기
 };
 
-struct sc_packet_exit_player : public packet
+struct SC_LOGIN_OK_PACKET
 {
-	unsigned int id;
+	unsigned short size;
+	char type;
+};
+
+struct SC_LOGIN_FAIL_PACKET
+{
+	unsigned short size;
+	char type;
+};
+
+struct SC_STAT_CHANGE_PACKET 
+{
+	unsigned short size;
+	char	type;
+	int		hp;
+	int		max_hp;
+	int		exp;
+	int		level;
 };
 
 #pragma pack(pop)

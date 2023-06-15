@@ -1,6 +1,6 @@
 #include "mainScene.h"
 
-MainScene::MainScene()
+MainScene::MainScene() : m_pressedMoveKey{0.f}
 {
 	BuildObjects();
 }
@@ -12,6 +12,14 @@ MainScene::~MainScene()
 
 void MainScene::BuildObjects()
 {
+	ifstream in("map.txt", ios::binary);
+
+	for (int i = 0; i < W_HEIGHT; ++i) {
+		for (int j = 0; j < W_WIDTH; ++j) {
+			in >> m_map[i][j];
+		}
+	}
+
 	auto mapTexture = make_shared<sf::Texture>();
 	mapTexture->loadFromFile("Resource\\Chessboard.png");
 
@@ -88,14 +96,21 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 			int tileX = i + g_leftX;
 			int tileY = j + g_topY;
 			if (tileX < 0 || tileX > W_WIDTH || tileY < 0 || tileY > W_HEIGHT) continue;
-			if (0 == (tileX / 3 + tileY / 3) % 2) {
+			if (m_map[tileY][tileX] == TileInfo::UNDEFINED_NONBLOCK) {
+				m_blackTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_blackTile->Render(window);
+			}
+			else if (m_map[tileY][tileX] == TileInfo::UNDEFINED_BLOCK) {
 				m_whiteTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
 				m_whiteTile->Render(window);
 			}
-			else
-			{
+			else if (m_map[tileY][tileX] == TileInfo::HENESYS_NONBLOCK) {
 				m_blackTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
 				m_blackTile->Render(window);
+			}
+			else if (m_map[tileY][tileX] == TileInfo::HENESYS_BLOCK) {
+				m_whiteTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_whiteTile->Render(window);
 			}
 		}
 	}
@@ -113,27 +128,75 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 	}
 }
 
-void MainScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
+void MainScene::OnProcessingKeyboardMessage(float timeElapsed)
 {
-	if (inputEvent.type == sf::Event::KeyPressed) {
-		switch (inputEvent.key.code)
-		{
-		case sf::Keyboard::Left:
-		case sf::Keyboard::Right:
-		case sf::Keyboard::Up:
-		case sf::Keyboard::Down:
-			cs_packet_move packet;
-			packet.size = sizeof(cs_packet_move);
+	if (GetAsyncKeyState(VK_LEFT) & 0x8000 || GetAsyncKeyState(VK_RIGHT) & 0x8000 ||
+		GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		m_pressedMoveKey += timeElapsed;
+		m_avatar->SetState(AnimationState::Walk);
+	}
+	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
+		m_avatar->SetSpriteFlip();
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
 			packet.type = CS_MOVE;
-			packet.direction = sf::Keyboard::Down - inputEvent.key.code;
+			packet.direction = 3;
 			Send(&packet);
 #ifdef NETWORK_DEBUG
 			cout << "CS_MOVE 송신" << endl;
 #endif
-			break;
-
 		}
 	}
+	else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
+		m_avatar->SetSpriteUnflip();
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = 2;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 송신" << endl;
+#endif
+		}
+	}
+	else if (GetAsyncKeyState(VK_UP) & 0x8000) {
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = 1;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 송신" << endl;
+#endif
+		}
+	}
+	else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = 0;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 송신" << endl;
+#endif
+		}
+	}
+	else {
+		m_pressedMoveKey = 0.f;
+		if (m_avatar) m_avatar->SetState(AnimationState::Idle);
+	}
+}
+
+void MainScene::OnProcessingInputTextMessage(sf::Event inputEvent)
+{
 }
 
 void MainScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window)
@@ -144,20 +207,20 @@ void MainScene::AddPlayer(int id, sf::Vector2f position, const char* name)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		SetAnimationInfo(CharacterInfo::HAKUREI_REIMU, m_avatar);
+		SetAnimationInfo(Serial::Character::HAKUREI_REIMU, m_avatar);
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
 		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
 		m_players[id] = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		SetAnimationInfo(CharacterInfo::PATCHOULI_KNOWLEDGE, m_players[id]);
+		SetAnimationInfo(Serial::Character::PATCHOULI_KNOWLEDGE, m_players[id]);
 		m_players[id]->SetPosition(position);
 		m_players[id]->SetName(name);
 	}
 }
 
-void MainScene::ExitPlayer(INT id)
+void MainScene::ExitPlayer(int id)
 {
 	m_players.erase(id);
 }
@@ -183,11 +246,11 @@ void MainScene::SetChat(INT id, const char* chat)
 	}
 }
 
-void MainScene::SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<AnimationObject>& object)
+void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationObject>& object)
 {
 	switch (characterInfo)
 	{
-	case HAKUREI_REIMU:
+	case Serial::Character::HAKUREI_REIMU:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
 			g_textures["REIMU_IDLE"], sf::IntRect{0, 0, 94, 102},
 			sf::Vector2i{10, 1}, 0.1f, 0.f
@@ -205,7 +268,7 @@ void MainScene::SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<A
 			sf::Vector2i{11, 1}, 0.1f, 0.f
 			});
 		break;
-	case KONPAKU_YOUMU:
+	case Serial::Character::KONPAKU_YOUMU:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
 			g_textures["YOUMU_IDLE"], sf::IntRect{0, 0, 108, 82},
 			sf::Vector2i{8, 1}, 0.1f, 0.f
@@ -223,7 +286,7 @@ void MainScene::SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<A
 			sf::Vector2i{8, 1}, 0.1f, 0.f
 			});
 		break;
-	case PATCHOULI_KNOWLEDGE:
+	case Serial::Character::PATCHOULI_KNOWLEDGE:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
 			g_textures["PATCHOULI_IDLE"], sf::IntRect{0, 0, 56, 104},
 			sf::Vector2i{18, 1}, 0.1f, 0.f
@@ -246,11 +309,11 @@ void MainScene::SetAnimationInfo(CharacterInfo characterInfo, const shared_ptr<A
 
 void MainScene::ProcessPacket(char* buf)
 {
-	switch (buf[1])
+	switch (buf[2])
 	{
 	case SC_ADD_OBJECT:
 	{
-		sc_packet_add_player* pk = reinterpret_cast<sc_packet_add_player*>(buf);
+		SC_ADD_OBJECT_PACKET* pk = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(buf);
 		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y};
 		AddPlayer(pk->id, pos, pk->name);
 #ifdef NETWORK_DEBUG
@@ -260,7 +323,7 @@ void MainScene::ProcessPacket(char* buf)
 	}
 	case SC_MOVE_OBJECT:
 	{
-		sc_packet_object_info* pk = reinterpret_cast<sc_packet_object_info*>(buf);
+		SC_MOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_MOVE_OBJECT_PACKET*>(buf);
 		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y };
 		Move(pk->id, pos);
 #ifdef NETWORK_DEBUG
@@ -270,7 +333,7 @@ void MainScene::ProcessPacket(char* buf)
 	}
 	case SC_CHAT:
 	{
-		sc_packet_chat* pk = reinterpret_cast<sc_packet_chat*>(buf);
+		SC_CHAT_PACKET* pk = reinterpret_cast<SC_CHAT_PACKET*>(buf);
 		SetChat(pk->id, pk->message);
 #ifdef NETWORK_DEBUG
 		cout << "SC_CHAT 수신" << endl;
@@ -279,7 +342,7 @@ void MainScene::ProcessPacket(char* buf)
 	}
 	case SC_REMOVE_OBJECT:
 	{
-		sc_packet_exit_player* pk = reinterpret_cast<sc_packet_exit_player*>(buf);
+		SC_REMOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(buf);
 		ExitPlayer(pk->id);
 #ifdef NETWORK_DEBUG
 		cout << "SC_REMOVE_OBJECT 수신" << endl;

@@ -14,14 +14,30 @@ GameServer::GameServer()
 	}
 }
 
+void GameServer::LoadMap()
+{
+	cout << "Load Map begin\n";
+	ifstream in("map.txt", ios::binary);
+
+	for (int i = 0; i < W_HEIGHT; ++i) {
+		for (int j = 0; j < W_WIDTH; ++j) {
+			in >> m_map[i][j];
+		}
+	}
+	cout << "Load Map end\n";
+}
+
 void GameServer::InitializeNPC()
 {
 	cout << "Initialize NPC begin\n";
 	for (UINT i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
 		auto npc = static_pointer_cast<NPC>(m_objects[i]);
 		npc->m_id = i;
-		npc->m_position.x = rand() % (W_WIDTH);
-		npc->m_position.y = rand() % (W_HEIGHT);
+		do 
+		{
+			npc->m_position.x = rand() % (W_WIDTH);
+			npc->m_position.y = rand() % (W_HEIGHT);
+		} while (m_map[npc->m_position.y][npc->m_position.x] & TileInfo::BLOCKING);
 		sprintf_s(npc->m_name, "N%d", i);
 
 		npc->m_state = OBJECT::INGAME;
@@ -66,7 +82,6 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 		client->m_name[0] = 0;
 		client->m_prevRemain = 0;
 		client->m_socket = c_socket;
-
 
 		return i;
 	}
@@ -141,6 +156,7 @@ void GameServer::Move(UINT id, UCHAR direction)
 	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
 		return;
 	}
+	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
 	m_objects[id]->m_position = to;
 
 	// 만약 섹터의 위치가 바뀌었을 경우
@@ -248,6 +264,7 @@ void GameServer::MoveNPC(UINT id)
 	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
 		return;
 	}
+	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
 	npc->m_position = to;
 
 	// 만약 섹터의 위치가 바뀌었을 경우

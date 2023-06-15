@@ -27,6 +27,7 @@ public:
 	GameServer();
 	~GameServer() = default;
 
+	void LoadMap();
 	void InitializeNPC();
 
 	UINT RegistClient(const SOCKET& c_socket);
@@ -54,7 +55,8 @@ public:
 	int Lua_SendMessage(lua_State* state);
 
 private:
-	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC> m_objects;
+	array<array<int, W_WIDTH>, W_HEIGHT>			m_map;
+	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC>	m_objects;
 
 	concurrency::concurrent_priority_queue<TimerEvent> m_timerQueue;
 };

@@ -11,7 +11,8 @@ public:
 	void Update(float timeElapsed) final;
 	void Render(const shared_ptr<sf::RenderWindow>& window) final;
 
-	void OnProcessingKeyboardMessage(sf::Event inputEvent) final;
+	void OnProcessingKeyboardMessage(float timeElapsed) final;
+	void OnProcessingInputTextMessage(sf::Event inputEvent) final;
 	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
 
 	void ProcessPacket(char* buf) final;

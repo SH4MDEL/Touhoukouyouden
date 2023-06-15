@@ -32,8 +32,8 @@ void LoginScene::BuildObjects()
 	m_gameStartUI->SetTextFont(g_font);
 	m_gameStartUI->SetTextColor(sf::Color(255, 255, 255));
 	m_gameStartUI->SetClickEvent([&]() {
-		cs_packet_login packet;
-		packet.size = sizeof(cs_packet_login);
+		CS_LOGIN_PACKET packet;
+		packet.size = sizeof(CS_LOGIN_PACKET);
 		packet.type = CS_LOGIN;
 		string player_name{ "PL" };
 		player_name += to_string(GetCurrentProcessId());
@@ -84,7 +84,11 @@ void LoginScene::Render(const shared_ptr<sf::RenderWindow>& window)
 	m_passwordBox->Render(window);
 }
 
-void LoginScene::OnProcessingKeyboardMessage(sf::Event inputEvent)
+void LoginScene::OnProcessingKeyboardMessage(float timeElapsed)
+{
+}
+
+void LoginScene::OnProcessingInputTextMessage(sf::Event inputEvent)
 {
 	switch (inputEvent.type)
 	{
@@ -106,13 +110,21 @@ void LoginScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr
 
 void LoginScene::ProcessPacket(char* buf)
 {
-	switch (buf[1])
+	switch (buf[2])
 	{
-	case SC_LOGIN_OK:
+	case SC_LOGIN_INFO:
 	{
-		sc_packet_login_confirm* pk = reinterpret_cast<sc_packet_login_confirm*>(buf);
+		SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
 		g_clientID = pk->id;
 		g_gameFramework.ChangeScene(Tag::Main);
+#ifdef NETWORK_DEBUG
+		cout << "SC_LOGIN_INFO 수신" << endl;
+#endif
+		break;
+	}
+	case SC_LOGIN_OK:
+	{
+		SC_LOGIN_OK_PACKET* pk = reinterpret_cast<SC_LOGIN_OK_PACKET*>(buf);
 #ifdef NETWORK_DEBUG
 		cout << "SC_LOGIN_OK 수신" << endl;
 #endif
