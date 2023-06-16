@@ -113,12 +113,17 @@ bool Database::Login(UINT uid, const char* id, const char* password)
     wsprintf(wstr, TEXT("EXEC Login %S, %S"), id, password);
     retcode = SQLExecDirect(hstmt, wstr, SQL_NTS);
 
-    SQLINTEGER xPosition, yPosition;
-    SQLLEN Xlen = 0, Ylen = 0;
+    SQLINTEGER character, xPosition, yPosition, level, exp, hp, maxHp;
+    SQLLEN len[7];
 
     if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
-        retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &xPosition, 10, &Xlen);
-        retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &yPosition, 10, &Ylen);
+        retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &character, 10, &len[0]);
+        retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &xPosition, 10, &len[1]);
+        retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &yPosition, 10, &len[2]);
+        retcode = SQLBindCol(hstmt, 4, SQL_C_LONG, &level, 10, &len[3]);
+        retcode = SQLBindCol(hstmt, 5, SQL_C_LONG, &exp, 10, &len[4]);
+        retcode = SQLBindCol(hstmt, 6, SQL_C_LONG, &hp, 10, &len[5]);
+        retcode = SQLBindCol(hstmt, 7, SQL_C_LONG, &maxHp, 10, &len[6]);
 
         retcode = SQLFetch(hstmt); // µ¥ÀÌÅÍ¸¦ ÇÏ³ª¾¿ ²¨³¿
         if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
@@ -127,7 +132,9 @@ bool Database::Login(UINT uid, const char* id, const char* password)
             return false;
         }
         if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
-            g_gameServer.RegistClientPosition(uid, { (short)xPosition, (short)yPosition });
+            g_gameServer.InputClient(uid, 
+                character, { (short)xPosition, (short)yPosition },
+                level, exp, hp, maxHp);
             handleLock.unlock();
             m_id.insert({ uid, id });
             return true;

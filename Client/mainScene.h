@@ -18,7 +18,7 @@ public:
 
 	void ProcessPacket(char* buf) final;
 
-	void AddPlayer(int id, sf::Vector2f position, const char* name);
+	void AddPlayer(int id, int serial, sf::Vector2f position, const char* name);
 	void ExitPlayer(int id);
 
 	void Move(INT id, sf::Vector2f position);

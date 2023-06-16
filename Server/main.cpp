@@ -4,9 +4,10 @@ int main()
 {
 	// 데이터베이스와 연결
 	Database::GetInstance();
+	Setting::GetInstance();
 	g_gameServer.LoadMap();
 	// NPC 초기화
-	g_gameServer.InitializeNPC();
+	g_gameServer.InitializeMonster();
 
 	// 서버 연결
 	WSADATA WSAData;
@@ -151,7 +152,7 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		case TIMER_NPC_MOVE:
+		case TIMER_NPC_ROAMING:
 		{
 			g_gameServer.MoveNPC(key);
 			bool activate = false;
@@ -182,19 +183,7 @@ void WorkerThread(HANDLE hiocp)
 
 			}
 			if (activate) {
-				int* sendMsg = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
-				int* targetid = reinterpret_cast<int*>(expOverlapped->m_sendMsg + sizeof(UINT));
-				int moveCount = --(*sendMsg);
-				if (moveCount > 0) {
-					g_gameServer.AddTimerEvent(key, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, moveCount, *targetid);
-				}
-				else {
-					EXPOVERLAPPED* expOverlapped = new EXPOVERLAPPED;
-					expOverlapped->m_compType = TIMER_NPC_BYE;
-					memcpy(expOverlapped->m_sendMsg, targetid, sizeof(UINT));
-					PostQueuedCompletionStatus(g_iocp, 1, key, &expOverlapped->m_overlapped);
-					g_gameServer.SleepNPC(key);
-				}
+				Timer::GetInstance().AddTimerEvent(key, TimerEvent::ROAMING, chrono::system_clock::now() + 1s, 0, -1);
 			}
 			else {
 				npc->m_isActive = false;
@@ -237,18 +226,19 @@ void WorkerThread(HANDLE hiocp)
 			DataBaseUserInfo* userinfo = 
 				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
 
+			auto& client = g_gameServer.GetClient(*cid);
 			{
 				SC_LOGIN_OK_PACKET sendpk;
 				sendpk.size = sizeof(SC_LOGIN_OK_PACKET);
 				sendpk.type = SC_LOGIN_OK;
-				g_gameServer.GetClient(*cid)->DoSend(&sendpk);
-				strcpy_s(g_gameServer.GetClient(*cid)->m_name, userinfo->id);
+				client->DoSend(&sendpk);
+				strcpy_s(client->m_name, userinfo->id);
 #ifdef NETWORK_DEBUG
 				cout << "SC_LOGIN_OK 송신" << endl;
 #endif
 				{
-					unique_lock<mutex> lock(g_gameServer.GetClient(*cid)->m_mutex);
-					g_gameServer.GetClient(*cid)->m_state = OBJECT::INGAME;
+					unique_lock<mutex> lock(client->m_mutex);
+					client->m_state = OBJECT::INGAME;
 				}
 			}
 			{
@@ -256,11 +246,11 @@ void WorkerThread(HANDLE hiocp)
 				sendpk.size = sizeof(SC_LOGIN_INFO_PACKET);
 				sendpk.type = SC_LOGIN_INFO;
 				sendpk.id = *cid;
-				//sendpk.hp;
-				//sendpk.max_hp;
-				//sendpk.exp;
-				//sendpk.level;
-				g_gameServer.GetClient(*cid)->DoSend(&sendpk);
+				sendpk.hp = client->m_hp;
+				sendpk.max_hp = client->m_maxHp;
+				sendpk.exp = client->m_exp;
+				sendpk.level = client->m_level;
+				client->DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
 				cout << "SC_LOGIN_INFO 송신" << endl;
 #endif
@@ -268,8 +258,8 @@ void WorkerThread(HANDLE hiocp)
 
 			// 섹터 안에 있는 오브젝트의 ID를 담음.
 			unordered_set<int> newViewList;
-			short sectorX = g_gameServer.GetClient(*cid)->m_position.x / (VIEW_RANGE * 2);
-			short sectorY = g_gameServer.GetClient(*cid)->m_position.y / (VIEW_RANGE * 2);
+			short sectorX = client->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = client->m_position.y / (VIEW_RANGE * 2);
 			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 			// 주변 9개의 섹터 전부 조사
@@ -294,7 +284,7 @@ void WorkerThread(HANDLE hiocp)
 					if (!g_gameServer.CanSee(*cid, id)) continue;
 
 					// 일단 나한테 전송
-					g_gameServer.GetClient(*cid)->SendAddPlayer(id);
+					client->SendAddPlayer(id);
 					// 상대는 NPC가 아닐 경우 전송
 					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(*cid);
 					else if (g_gameServer.IsSamePosition(id, *cid)) g_gameServer.WakeupNPC(id, *cid);
@@ -400,7 +390,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 			if (!oldViewList.count(id)) {
 				g_gameServer.GetClient(cid)->SendAddPlayer(id);
-				//if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) g_gameServer.WakeupNPC(id, cid);
+				if (id >= MAX_USER) g_gameServer.WakeupNPC(id, cid);
 			}
 		}
 		
@@ -413,14 +403,14 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		}
 
 		// 이동한 자리에 NPC가 있는지 검사
-		g_gameServer.GetClient(cid)->m_viewLock.lock();
-		auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
-		g_gameServer.GetClient(cid)->m_viewLock.unlock();
-		for (auto& id : npcCheckingViewList) {
-			if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
-				g_gameServer.WakeupNPC(id, cid);
-			}
-		}
+		//g_gameServer.GetClient(cid)->m_viewLock.lock();
+		//auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
+		//g_gameServer.GetClient(cid)->m_viewLock.unlock();
+		//for (auto& id : npcCheckingViewList) {
+		//	if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
+		//		g_gameServer.WakeupNPC(id, cid);
+		//	}
+		//}
 
 		break;
 	}
@@ -429,7 +419,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 void TimerThread(HANDLE hiocp)
 {
-	g_gameServer.TimerThread(hiocp);
+	Timer::GetInstance().TimerThread(hiocp);
 }
 
 void DatabaseThread(HANDLE hiocp)

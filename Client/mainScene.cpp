@@ -67,6 +67,17 @@ void MainScene::BuildObjects()
 	g_textures.insert({ "PATCHOULI_ATTACK", patchouliAttackTexture });
 	g_textures.insert({ "PATCHOULI_DIE", patchouliDieTexture });
 
+	auto shroomIdleTexture = make_shared<sf::Texture>();
+	shroomIdleTexture->loadFromFile("Resource\\MONSTER\\SHROOM\\IDLE.png");
+	auto shroomWalkTexture = make_shared<sf::Texture>();
+	shroomWalkTexture->loadFromFile("Resource\\MONSTER\\SHROOM\\WALK.png");
+	auto shroomDieTexture = make_shared<sf::Texture>();
+	shroomDieTexture->loadFromFile("Resource\\MONSTER\\SHROOM\\DIE.png");
+
+	g_textures.insert({ "SHROOM_IDLE", shroomIdleTexture });
+	g_textures.insert({ "SHROOM_WALK", shroomWalkTexture });
+	g_textures.insert({ "SHROOM_DIE", shroomDieTexture });
+
 	m_whiteTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
 	m_whiteTile->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
 	m_blackTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
@@ -203,18 +214,18 @@ void MainScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<
 {
 }
 
-void MainScene::AddPlayer(int id, sf::Vector2f position, const char* name)
+void MainScene::AddPlayer(int id, int serial, sf::Vector2f position, const char* name)
 {
 	if (id == g_clientID) {
 		m_avatar = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		SetAnimationInfo(Serial::Character::HAKUREI_REIMU, m_avatar);
+		SetAnimationInfo(serial, m_avatar);
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
 		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
 		m_players[id] = make_shared<Player>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-		SetAnimationInfo(Serial::Character::PATCHOULI_KNOWLEDGE, m_players[id]);
+		SetAnimationInfo(serial, m_players[id]);
 		m_players[id]->SetPosition(position);
 		m_players[id]->SetName(name);
 	}
@@ -304,6 +315,20 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			sf::Vector2i{10, 1}, 0.1f, 0.f
 			});
 		break;
+	case Serial::Monster::SHROOM:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["SHROOM_IDLE"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{3, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["SHROOM_WALK"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["SHROOM_DIE"], sf::IntRect{0, 0, 42, 37},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		break;
 	}
 }
 
@@ -315,7 +340,7 @@ void MainScene::ProcessPacket(char* buf)
 	{
 		SC_ADD_OBJECT_PACKET* pk = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(buf);
 		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y};
-		AddPlayer(pk->id, pos, pk->name);
+		AddPlayer(pk->id, pk->serial, pos, pk->name);
 #ifdef NETWORK_DEBUG
 		cout << "SC_ADD_OBJECT ¼ö½Å" << endl;
 #endif

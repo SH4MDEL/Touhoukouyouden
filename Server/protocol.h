@@ -13,7 +13,7 @@ constexpr int		ID_SIZE = 20;
 constexpr int		PASSWORD_SIZE = 20;
 
 constexpr int		MAX_USER = 20000;
-constexpr int		MAX_NPC = 2000;
+constexpr int		MAX_MONSTER = 5000;
 
 constexpr int		W_WIDTH = 2000;
 constexpr int		W_HEIGHT = 2000;
@@ -48,17 +48,21 @@ namespace Serial {
 	};
 
 	namespace NPC {
-		constexpr int NPC_A = Character::END + 1;
-		constexpr int NPC_B = Character::END + 2;
-		constexpr int NPC_C = Character::END + 3;
+		constexpr int NPC_A = Character::END;
+		constexpr int NPC_B = Character::END + 1;
+		constexpr int NPC_C = Character::END + 2;
 
 		constexpr int END = Character::END + 1000;
 	}
 
-	namespace MonsterInfo {
-		constexpr int SHROOM = NPC::END + 1;
-		constexpr int SLIME = NPC::END + 2;
-		constexpr int MUSHROOM = NPC::END + 3;
+	namespace Monster {
+		constexpr int START = NPC::END;
+		constexpr int SHROOM = START;
+		constexpr int SLIME = START + 1;
+		constexpr int MUSHROOM = START + 2;
+		constexpr int COUNT = START + 3;
+
+		constexpr int END = NPC::END + 1000;
 	};
 }
 
@@ -194,8 +198,12 @@ struct SC_ADD_OBJECT_PACKET
 	unsigned short size;
 	char type;
 	unsigned int id;
+	int serial;
 	Short2 coord;
 	char name[NAME_SIZE];
+	int level;
+	int hp;
+	int maxHp;
 };
 
 struct SC_REMOVE_OBJECT_PACKET

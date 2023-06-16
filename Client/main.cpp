@@ -20,9 +20,6 @@ int main()
 			if (event.type == sf::Event::LostFocus) {
 				g_gameFramework.SetIsActive(false);
 			}
-			if (event.type == sf::Event::Closed) {
-				g_window->close();
-			}
 			if (event.type == sf::Event::TextEntered) {
 				g_gameFramework.OnProcessingInputTextMessage(event);
 			}
@@ -31,6 +28,9 @@ int main()
                 event.type == sf::Event::MouseMoved) {
                 g_gameFramework.OnProcessingMouseMessage(event, g_window);
             }
+			if (event.type == sf::Event::Closed) {
+				g_window->close();
+			}
 		}
 		g_window->clear();
 		g_gameFramework.FrameAdvance();

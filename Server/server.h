@@ -2,21 +2,7 @@
 #include "stdafx.h"
 #include "npc.h"
 #include "client.h"
-
-struct TimerEvent
-{
-	enum Type { RANDOM_MOVE, HEAL, ATTACK };
-
-	UINT m_id;
-	Type m_type;
-	chrono::system_clock::time_point m_executeTime;
-	INT m_eventMsg;
-	UINT m_targetid;
-
-	constexpr bool operator<(const TimerEvent& rhs) const {
-		return m_executeTime > rhs.m_executeTime;
-	}
-};
+#include "timer.h"
 
 class OBJECT;
 class CLIENT;
@@ -28,10 +14,10 @@ public:
 	~GameServer() = default;
 
 	void LoadMap();
-	void InitializeNPC();
+	void InitializeMonster();
 
 	UINT RegistClient(const SOCKET& c_socket);
-	void RegistClientPosition(UINT id, Short2 position);
+	void InputClient(UINT id, int serial, Short2 position, int level, int exp, int hp, int maxHp);
 	void ExitClient(UINT id);
 
 	Short2 GetPlayerPosition(UINT id);
@@ -42,12 +28,9 @@ public:
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);
 
-	void AddTimerEvent(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid);
 	void WakeupNPC(UINT id, UINT waker);
 	void SleepNPC(UINT id);
 	void MoveNPC(UINT id);
-
-	void TimerThread(HANDLE hiocp);
 
 	// Lua
 	INT Lua_GetX(lua_State* state);
@@ -56,9 +39,7 @@ public:
 
 private:
 	array<array<int, W_WIDTH>, W_HEIGHT>			m_map;
-	array<shared_ptr<OBJECT>, MAX_USER + MAX_NPC>	m_objects;
-
-	concurrency::concurrent_priority_queue<TimerEvent> m_timerQueue;
+	array<shared_ptr<OBJECT>, MAX_USER + MAX_MONSTER>	m_objects;
 };
 
 

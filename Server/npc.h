@@ -9,9 +9,11 @@ public:
 
 public:
 	atomic_bool	m_isActive;
-	atomic_bool m_luaInit;
 
 	lua_State*	m_luaState;
 	mutex		m_luaLock;
+
+	FLOAT		m_speed;
+	INT			m_type;
 };
 

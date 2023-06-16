@@ -45,12 +45,24 @@ void CLIENT::SendAddPlayer(INT id)
 	sendpk.type = SC_ADD_OBJECT;
 	sendpk.id = id;
 	if (id < MAX_USER) {
-		sendpk.coord = g_gameServer.GetClient((UINT)id)->m_position;
+		auto& client = g_gameServer.GetClient((UINT)id);
+		sendpk.serial = client->m_serial;
+		sendpk.coord = client->m_position;
+		strcpy_s(sendpk.name, client->m_name);
+		sendpk.level = client->m_level;
+		sendpk.hp = client->m_hp;
+		sendpk.maxHp = client->m_maxHp;
 	}
 	else {
-		sendpk.coord = g_gameServer.GetNPC((UINT)id)->m_position;
+		auto& npc = g_gameServer.GetNPC((UINT)id);
+		sendpk.coord = npc->m_position;
+		sendpk.serial = npc->m_serial;
+		strcpy_s(sendpk.name, npc->m_name);
+		sendpk.level = npc->m_level;
+		sendpk.hp = npc->m_hp;
+		sendpk.maxHp = npc->m_maxHp;
 	}
-	strcpy_s(sendpk.name, g_gameServer.GetClient((UINT)id)->m_name);
+
 	DoSend(&sendpk);
 #ifdef NETWORK_DEBUG
 	cout << "SC_ADD_OBJECT ¼Û½Å - ID : " << m_id << ", x : " << sendpk.coord.x << ", y : " << sendpk.coord.y << endl;

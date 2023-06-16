@@ -138,8 +138,10 @@
     <ClCompile Include="npc.cpp" />
     <ClCompile Include="object.cpp" />
     <ClCompile Include="server.cpp" />
+    <ClCompile Include="setting.cpp" />
     <ClCompile Include="singleton.cpp" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client.h" />
@@ -149,12 +151,14 @@
     <ClInclude Include="npc.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="protocol.h" />
-    <ClInclude Include="protocol_2023.h" />
     <ClInclude Include="server.h" />
+    <ClInclude Include="setting.h" />
     <ClInclude Include="singleton.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="monster.lua" />
     <None Include="npc.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

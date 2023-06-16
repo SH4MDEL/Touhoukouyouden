@@ -54,6 +54,12 @@
     <ClCompile Include="singleton.cpp">
       <Filter>소스 파일\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="timer.cpp">
+      <Filter>소스 파일\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="setting.cpp">
+      <Filter>소스 파일\Manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="expOverlapped.h">
@@ -86,12 +92,18 @@
     <ClInclude Include="server.h">
       <Filter>헤더 파일\Manager</Filter>
     </ClInclude>
-    <ClInclude Include="protocol_2023.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="timer.h">
+      <Filter>헤더 파일\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="setting.h">
+      <Filter>헤더 파일\Manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="npc.lua">
+      <Filter>스크립트 파일</Filter>
+    </None>
+    <None Include="monster.lua">
       <Filter>스크립트 파일</Filter>
     </None>
   </ItemGroup>

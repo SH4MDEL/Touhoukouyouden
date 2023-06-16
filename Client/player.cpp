@@ -27,15 +27,15 @@ void Player::Render(const shared_ptr<sf::RenderWindow>& window)
 
 	float rx = (m_position.x - g_leftX) * TILE_WIDTH;
 	float ry = (m_position.y - g_topY) * TILE_WIDTH;
+
+	auto size = m_name.getGlobalBounds();
+	m_name.setPosition(rx + 32 - size.width / 2, ry + 40);
+	window->draw(m_name);
+
 	if (m_chatStatus) {
 		auto size = m_chat.getGlobalBounds();
-		m_chat.setPosition(rx + 32 - size.width / 2, ry - 20);
+		m_chat.setPosition(rx + 32 - size.width / 2, ry - 100);
 		window->draw(m_chat);
-	}
-	else {
-		auto size = m_name.getGlobalBounds();
-		m_name.setPosition(rx + 32 - size.width / 2, ry - 20);
-		window->draw(m_name);
 	}
 }
 
@@ -43,7 +43,7 @@ void Player::SetName(const char* name)
 {
 	m_name.setFont(g_font);
 	m_name.setString(name);
-	m_name.setFillColor(sf::Color(255, 255, 0));
+	m_name.setFillColor(sf::Color(255, 255, 255));
 	m_name.setStyle(sf::Text::Bold);
 }
 

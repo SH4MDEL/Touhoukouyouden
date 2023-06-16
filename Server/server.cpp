@@ -9,7 +9,7 @@ GameServer::GameServer()
 	for (UINT i = 0; i < MAX_USER; ++i) {
 		m_objects[i] = make_shared<CLIENT>();
 	}
-	for (UINT i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
+	for (UINT i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
 		m_objects[i] = make_shared<NPC>();
 	}
 }
@@ -27,25 +27,36 @@ void GameServer::LoadMap()
 	cout << "Load Map end\n";
 }
 
-void GameServer::InitializeNPC()
+void GameServer::InitializeMonster()
 {
-	cout << "Initialize NPC begin\n";
-	for (UINT i = MAX_USER; i < MAX_USER + MAX_NPC; ++i) {
+	cout << "Initialize Monster begin\n";
+	for (UINT i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
 		auto npc = static_pointer_cast<NPC>(m_objects[i]);
 		npc->m_id = i;
+		npc->m_serial = Serial::Monster::SHROOM;
+		const auto setting = Setting::GetInstance().GetMonsterSetting(npc->m_serial);
+
 		do 
 		{
 			npc->m_position.x = rand() % (W_WIDTH);
 			npc->m_position.y = rand() % (W_HEIGHT);
-		} while (m_map[npc->m_position.y][npc->m_position.x] & TileInfo::BLOCKING);
-		sprintf_s(npc->m_name, "N%d", i);
+		} while ((m_map[npc->m_position.y][npc->m_position.x] & TileInfo::BLOCKING) ||
+			VillageBorder::InVillage({ npc->m_position.x, npc->m_position.y }));
+
+		strcpy_s(npc->m_name, setting.name.c_str());
+		npc->m_level = setting.level;
+		npc->m_exp = setting.exp;
+		npc->m_hp = setting.hp;
+		npc->m_maxHp = setting.hp;
+		npc->m_speed = setting.speed;
+		npc->m_atk = setting.atk;
+		npc->m_type = setting.type;
 
 		npc->m_state = OBJECT::INGAME;
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
 		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
 
-		npc->m_luaInit = true;
 		npc->m_luaState = luaL_newstate();
 		lua_gc(npc->m_luaState, LUA_GCSTOP);
 
@@ -64,7 +75,7 @@ void GameServer::InitializeNPC()
 		lua_register(npc->m_luaState, "API_GetY", API_GetY);
 
 	}
-	cout << "Initialize NPC end\n";
+	cout << "Initialize Monster end\n";
 }
 
 UINT GameServer::RegistClient(const SOCKET& c_socket)
@@ -77,6 +88,7 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 			client->m_state = OBJECT::ALLOC;
 		}
 		client->m_id = i;
+		client->m_serial = -1;
 		client->m_position.x = -1;
 		client->m_position.y = -1;
 		client->m_name[0] = 0;
@@ -88,11 +100,17 @@ UINT GameServer::RegistClient(const SOCKET& c_socket)
 	return -1;
 }
 
-void GameServer::RegistClientPosition(UINT id, Short2 position)
+void GameServer::InputClient(UINT id, int serial, Short2 position, int level, int exp, int hp, int maxHp)
 {
 	auto client = static_pointer_cast<CLIENT>(m_objects[id]);
 
+	client->m_serial = serial;
 	client->m_position = position;
+	client->m_level = level;
+	client->m_exp = exp;
+	client->m_hp = hp;
+	client->m_maxHp = maxHp;
+
 	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].lock();
 	g_sector[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].insert(id);
 	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].unlock();
@@ -192,11 +210,8 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
-void GameServer::AddTimerEvent(UINT id, TimerEvent::Type type, chrono::system_clock::time_point executeTime, INT eventMsg, UINT targetid)
-{
-	m_timerQueue.push( TimerEvent{id, type, executeTime, eventMsg, targetid } );
-}
-
+// 자고 있는 NPC를 깨운다.
+// NPC의 성질에 따라 다른 상태를 적용해 줄 필요가 있다.
 void GameServer::WakeupNPC(UINT id, UINT waker)
 {
 	EXPOVERLAPPED* expOverlapped = new EXPOVERLAPPED;
@@ -211,7 +226,7 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
 
 	// 아니라면 타이머 쓰레드에 이동 명령 통지
-	m_timerQueue.push(TimerEvent{ id, TimerEvent::RANDOM_MOVE, chrono::system_clock::now() + 1s, 3, waker });
+	Timer::GetInstance().AddTimerEvent(id, TimerEvent::ROAMING, chrono::system_clock::now() + 1s, 0, waker);
 }
 
 void GameServer::SleepNPC(UINT id)
@@ -335,36 +350,6 @@ void GameServer::MoveNPC(UINT id)
 		if (!newViewList.count(cid)) {
 			client->SendExitPlayer(id);
 		}
-	}
-}
-
-void GameServer::TimerThread(HANDLE hiocp)
-{
-	while (true)
-	{
-		auto currentTime = chrono::system_clock::now();
-		TimerEvent ev;
-		if (m_timerQueue.try_pop(ev)) {
-			if (ev.m_executeTime > currentTime) {
-				m_timerQueue.push(ev);
-				this_thread::sleep_for(1ms);
-				continue;
-			}
-			switch (ev.m_type)
-			{
-			case TimerEvent::RANDOM_MOVE:
-				EXPOVERLAPPED* over = new EXPOVERLAPPED;
-				over->m_compType = COMP_TYPE::TIMER_NPC_MOVE;
-				memcpy(over->m_sendMsg, &ev.m_eventMsg, sizeof(ev.m_eventMsg));
-				memcpy(over->m_sendMsg + sizeof(ev.m_eventMsg), &ev.m_targetid, sizeof(ev.m_targetid));
-				
-				// type 제외하고 초기화할 필요 없음
-				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
-				break;
-			}
-			continue;
-		}
-		this_thread::sleep_for(1ms);
 	}
 }
 
