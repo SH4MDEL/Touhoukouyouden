@@ -1,8 +1,9 @@
 #include "server.h"
 
-INT API_SendMessage(lua_State* state) { return g_gameServer.Lua_SendMessage(state); }
 INT API_GetX(lua_State* state) { return g_gameServer.Lua_GetX(state); }
 INT API_GetY(lua_State* state) { return g_gameServer.Lua_GetY(state); }
+int API_SendMessage(lua_State* state) { return g_gameServer.Lua_SendMessage(state); }
+int API_AStar(lua_State* state) { return g_gameServer.Lua_AStar(state); }
 
 GameServer::GameServer()
 {
@@ -33,7 +34,7 @@ void GameServer::InitializeMonster()
 	for (UINT i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
 		auto npc = static_pointer_cast<NPC>(m_objects[i]);
 		npc->m_id = i;
-		npc->m_serial = Serial::Monster::SHROOM;
+		npc->m_serial = Serial::Monster::RIBBONPIG;
 		const auto setting = Setting::GetInstance().GetMonsterSetting(npc->m_serial);
 
 		do 
@@ -50,7 +51,8 @@ void GameServer::InitializeMonster()
 		npc->m_maxHp = setting.hp;
 		npc->m_speed = setting.speed;
 		npc->m_atk = setting.atk;
-		npc->m_type = setting.type;
+		npc->m_moveType = setting.moveType;
+		npc->m_waitType = setting.waitType;
 
 		npc->m_state = OBJECT::INGAME;
 
@@ -61,7 +63,7 @@ void GameServer::InitializeMonster()
 		lua_gc(npc->m_luaState, LUA_GCSTOP);
 
 		luaL_openlibs(npc->m_luaState);
-		luaL_loadfile(npc->m_luaState, "npc.lua");
+		luaL_loadfile(npc->m_luaState, "ai.lua");
 		lua_pcall(npc->m_luaState, 0, 0, 0);
 
 		lua_getglobal(npc->m_luaState, "set_uid");
@@ -69,10 +71,10 @@ void GameServer::InitializeMonster()
 		lua_pcall(npc->m_luaState, 1, 0, 0);
 		lua_pop(npc->m_luaState, 1);
 
-
-		lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
 		lua_register(npc->m_luaState, "API_GetX", API_GetX);
 		lua_register(npc->m_luaState, "API_GetY", API_GetY);
+		lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
+		lua_register(npc->m_luaState, "API_AStar", API_AStar);
 
 	}
 	cout << "Initialize Monster end\n";
@@ -210,23 +212,18 @@ shared_ptr<NPC> GameServer::GetNPC(UINT id)
 	return static_pointer_cast<NPC>(m_objects[id]);
 }
 
-// 자고 있는 NPC를 깨운다.
-// NPC의 성질에 따라 다른 상태를 적용해 줄 필요가 있다.
+// 자고 있는 몬스터를 깨운다.
+// 이 함수는 플레이어의 시야에 몬스터가 들어왔을 때 호출된다.
 void GameServer::WakeupNPC(UINT id, UINT waker)
 {
-	EXPOVERLAPPED* expOverlapped = new EXPOVERLAPPED;
-	expOverlapped->m_compType = TIMER_NPC_HELLO;
-	memcpy(expOverlapped->m_sendMsg, &waker, sizeof(waker));
-	PostQueuedCompletionStatus(g_iocp, 1, id, &expOverlapped->m_overlapped);
-
 	// 이미 활동중인 NPC라면 return
-	auto npc = static_pointer_cast<NPC>(m_objects[id]);
-	if (npc->m_isActive) return;
+	auto& monster = static_pointer_cast<NPC>(m_objects[id]);
+	if (monster->m_isActive) return;
 	bool oldState = false;
-	if (!atomic_compare_exchange_strong(&npc->m_isActive, &oldState, true)) return;
+	if (!atomic_compare_exchange_strong(&monster->m_isActive, &oldState, true)) return;
 
-	// 아니라면 타이머 쓰레드에 이동 명령 통지
-	Timer::GetInstance().AddTimerEvent(id, TimerEvent::ROAMING, chrono::system_clock::now() + 1s, 0, waker);
+	Timer::GetInstance().AddTimerEvent(id, TimerEvent::MOVE, 
+		chrono::system_clock::now() + monster->m_speed, 0, waker);
 }
 
 void GameServer::SleepNPC(UINT id)
@@ -237,9 +234,10 @@ void GameServer::SleepNPC(UINT id)
 	atomic_compare_exchange_strong(&npc->m_isActive, &oldState, false);
 }
 
-void GameServer::MoveNPC(UINT id)
+void GameServer::RoamingNPC(UINT id)
 {
 	auto npc = static_pointer_cast<NPC>(m_objects[id]);
+
 	unordered_set<int> viewList;
 	{
 		short sectorX = npc->m_position.x / (VIEW_RANGE * 2);
@@ -353,6 +351,140 @@ void GameServer::MoveNPC(UINT id)
 	}
 }
 
+void GameServer::PathfindingNPC(UINT id, UINT target)
+{
+	auto& monster = g_gameServer.GetNPC(id);
+	auto& targetP = g_gameServer.GetClient(target)->m_position;
+	if (monster->m_position == targetP) return;
+
+	monster->m_luaLock.lock();
+	lua_getglobal(monster->m_luaState, "pathfinding");
+	lua_pushnumber(monster->m_luaState, target);
+	lua_pcall(monster->m_luaState, 1, 1, 0);
+
+	int result = lua_tointeger(monster->m_luaState, -1);
+	lua_pop(monster->m_luaState, 1);
+	monster->m_luaLock.unlock();
+
+	if (result == -1) {
+		// 이동 실패 처리
+		cout << "이동 불가능" << endl;
+		return;
+	}
+
+	unordered_set<int> viewList;
+	{
+		short sectorX = monster->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = monster->m_position.y / (VIEW_RANGE * 2);
+		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+		// 주변 9개의 섹터 전부 조사
+		for (int i = 0; i < 9; ++i) {
+			if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+				sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+				continue;
+			}
+
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+				if (cid >= MAX_USER) continue;
+				if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
+				if (CanSee(id, cid)) viewList.insert(cid);
+				// 섹터 내의 오브젝트 중 시야 안의 오브젝트만 뷰 리스트에 추가
+			}
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+		}
+	}
+
+	// 이동 처리
+	Short2 from = monster->m_position;
+	Short2 d;
+	switch (result)
+	{
+	case 0: d.x = 0; d.y = 1; break;
+	case 1: d.x = 0; d.y = -1; break;
+	case 2: d.x = 1; d.y = 0; break;
+	case 3: d.x = -1; d.y = 0; break;
+	}
+
+	Short2 to = { from + d };
+	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
+		return;
+	}
+	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
+	monster->m_position = to;
+
+	// 만약 섹터의 위치가 바뀌었을 경우
+	if ((from.x / (VIEW_RANGE * 2) != to.x / (VIEW_RANGE * 2)) ||
+		(from.y / (VIEW_RANGE * 2) != to.y / (VIEW_RANGE * 2))) {
+		// 데드락을 방지하기 위해 락을 거는 순서를 정한다.
+		priority_queue<Short2> pq;
+		pq.push(from); pq.push(to);
+		while (!pq.empty()) {
+			auto index = pq.top(); pq.pop();
+			g_sectorLock[index.y / (VIEW_RANGE * 2)][index.x / (VIEW_RANGE * 2)].lock();
+		}
+		// 이전 섹터에서 오브젝트의 ID를 삭제한다.
+		g_sector[from.y / (VIEW_RANGE * 2)][from.x / (VIEW_RANGE * 2)].erase(id);
+		// 새로운 섹터에 오브젝트의 ID를 삽입한다.
+		g_sector[to.y / (VIEW_RANGE * 2)][to.x / (VIEW_RANGE * 2)].insert(id);
+
+		pq.push(from); pq.push(to);
+		while (!pq.empty()) {
+			auto index = pq.top(); pq.pop();
+			g_sectorLock[index.y / (VIEW_RANGE * 2)][index.x / (VIEW_RANGE * 2)].unlock();
+		}
+	}
+
+
+	unordered_set<int> newViewList;
+	{
+		short sectorX = monster->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = monster->m_position.y / (VIEW_RANGE * 2);
+		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+		// 주변 9개의 섹터 전부 조사
+		for (int i = 0; i < 9; ++i) {
+			if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+				sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+				continue;
+			}
+
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+				if (cid >= MAX_USER) continue;
+				if (monster->m_state != OBJECT::INGAME) continue;
+				if (CanSee(id, cid)) newViewList.insert(cid);
+			}
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+		}
+	}
+
+	// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
+	for (auto& cid : newViewList) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[cid]);
+		client->m_viewLock.lock();
+		if (!client->m_viewList.count(id)) {
+			// View List에 없다면 더해준다.
+			client->m_viewLock.unlock();
+			client->SendAddPlayer(id);
+		}
+		else {
+			// 있다면 이동 시킨다.
+			client->m_viewLock.unlock();
+			client->SendObjectInfo(id);
+		}
+	}
+
+	// 새 View List에선 제거되었는데 이전에 있던 플레이어의 정보 삭제
+	for (auto& cid : viewList) {
+		auto client = static_pointer_cast<CLIENT>(m_objects[cid]);
+		if (!newViewList.count(cid)) {
+			client->SendExitPlayer(id);
+		}
+	}
+}
+
 INT GameServer::Lua_GetX(lua_State* state)
 {
 	int id = (int)lua_tointeger(state, -1);
@@ -382,3 +514,92 @@ int GameServer::Lua_SendMessage(lua_State* state)
 	client->SendChat(npc, message);
 	return 0;
 }
+
+int GameServer::Lua_AStar(lua_State* state)
+{
+	int finder = lua_tonumber(state, -2);
+	int target = lua_tonumber(state, -1);
+	lua_pop(state, 2);
+
+	Short2 start = m_objects[finder]->m_position;
+	Short2 end = m_objects[target]->m_position;
+
+	// AStar 구현
+	// pair.first = 휴리스틱
+	// pair.second = 해당 좌표
+	priority_queue<pair<int, Short2>, vector<pair<int, Short2>>, greater<pair<int, Short2>>> pq;
+	unordered_map<Short2, int> open;
+	unordered_map<Short2, Short2> parent;
+	// 이미 탐색한 노드(닫힌 노드)의 목록
+	unordered_set<Short2> closed;
+
+	// 출발 노드에서 도착 노드까지의 예상 비용을 구한다.
+	int s_h = abs(start.x - end.x) + abs(start.y - end.y);
+	if (s_h == 1) {
+		if (start.x == end.x && start.y + 1 == end.y) lua_pushnumber(state, 0);
+		if (start.x == end.x && start.y - 1 == end.y) lua_pushnumber(state, 1);
+		if (start.x + 1 == end.x && start.y == end.y) lua_pushnumber(state, 2);
+		if (start.x - 1 == end.x && start.y == end.y) lua_pushnumber(state, 3);
+		return 1;
+	}
+	pq.push({ s_h, start });
+	open.insert({ start, s_h });
+	parent.insert({ start, Short2{-1, -1} });
+
+
+	while (!pq.empty()) {
+		pair<int, Short2> top = pq.top(); pq.pop();
+		open.erase(top.second);
+		closed.insert(top.second);
+
+		// 인접 4칸의 좌표를 조사한다.
+		const array<Short2, 4> d = { Short2{0, 1},Short2{0, -1},Short2{1, 0} ,Short2{-1, 0} };
+		for (int i = 0; i < 4; ++i) {
+			const Short2 to = { top.second + d[i]};
+			// 해당 칸으로 이동 불가능하면 큐에 추가 X
+			if (m_map[to.y][to.x] & TileInfo::BLOCKING) {
+				continue;
+			}
+			// 해당 노드를 이미 방문했으면 큐에 추가 X
+			if (closed.find(to) != closed.end()) {
+				continue;
+			}
+			if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) continue;
+
+			// 목적지 탐색 성공
+			if (to.x == end.x && to.y == end.y) {
+				Short2 p = top.second;
+				while (parent[p].x != start.x || parent[p].y != start.y) {
+					p = parent[p];
+				}
+				if (start.x == p.x && start.y + 1 == p.y) lua_pushnumber(state, 0);
+				if (start.x == p.x && start.y - 1 == p.y) lua_pushnumber(state, 1);
+				if (start.x + 1 == p.x && start.y == p.y) lua_pushnumber(state, 2);
+				if (start.x - 1 == p.x && start.y == p.y) lua_pushnumber(state, 3);
+				return 1;
+			}
+
+			// 휴리스틱 : 장애물이 없다고 가정한 목적지까지의 거리
+			int h = abs(to.x - end.x) + abs(to.y - end.y);
+			// g : 해당 노드로 이동하기 위한 비용
+			int g = top.first + 1;
+			int f = h + g;
+
+			// 만약 열린 노드에 해당 노드가 있으면 비용이 더 낮을 경우에만 갱신
+			if (open.count(to)) {
+				if (open[to] > f) {
+					open[to] = f;
+				}
+				else continue;
+			}
+			else open.insert({ to, f });
+			pq.push({f, to});
+			parent.insert({ to, top.second });
+		}
+	}
+
+	// 목표 탐색 실패
+	lua_pushnumber(state, -1);
+	return 1;
+}
+

@@ -58,12 +58,25 @@ namespace Serial {
 	namespace Monster {
 		constexpr int START = NPC::END;
 		constexpr int SHROOM = START;
-		constexpr int SLIME = START + 1;
-		constexpr int MUSHROOM = START + 2;
+		constexpr int MUSHROOM = START + 1;
+		constexpr int RIBBONPIG = START + 2;
 		constexpr int COUNT = START + 3;
 
 		constexpr int END = NPC::END + 1000;
 	};
+}
+
+namespace Type
+{
+	namespace Wait {
+		constexpr int FIXED = 1;
+		constexpr int ROAMING = 2;
+	}
+
+	namespace Move {
+		constexpr int PIECE = 1;
+		constexpr int AGRO = 2;
+	}
 }
 
 enum AnimationState {
@@ -126,12 +139,24 @@ struct Short2 {
 	Short2 operator-(const Short2& rhs) const { return Short2{ x - rhs.x, y - rhs.y }; }
 	Short2& operator+=(const Short2& rhs) { (*this) = (*this) + rhs; return *this; }
 	Short2& operator-=(const Short2& rhs) { (*this) = (*this) - rhs; return *this; }
+	bool operator==(const Short2& rhs) const { return (x == rhs.x && y == rhs.y);}
 
 	bool operator<(const Short2& rhs) const {
 		if (x != rhs.x) return x < rhs.x;
 		return y < rhs.y;
 	}
+	friend struct std::hash<Short2>;
 };
+
+namespace std {
+template <>
+struct hash<Short2> {
+	size_t operator()(const Short2& s) const {
+		hash<short> hash_func;
+		return (hash_func(s.x)) ^ (hash_func(s.y));
+	}
+};
+}
 
 struct PACKET
 {

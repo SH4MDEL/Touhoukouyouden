@@ -71,7 +71,6 @@ void WorkerThread(HANDLE hiocp)
 			else {
 				cout << "GetQueuedCompletionStatus Error on client[" << key << "]\n";
 				// 접속 종료 패킷 전송
-
 				g_gameServer.ExitClient(key);
 				if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 				continue;
@@ -80,7 +79,6 @@ void WorkerThread(HANDLE hiocp)
 
 		if ((received == 0) && ((expOverlapped->m_compType == OP_RECV) || (expOverlapped->m_compType == OP_SEND))) {
 			// 접속 종료 패킷 전송
-
 			g_gameServer.ExitClient(key);
 			if (expOverlapped->m_compType == OP_SEND) delete expOverlapped;
 			continue;
@@ -152,15 +150,21 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
-		case TIMER_NPC_ROAMING:
+		case TIMER_NPC_MOVE:
 		{
-			g_gameServer.MoveNPC(key);
 			bool activate = false;
+			auto& monster = g_gameServer.GetNPC(key);
+			// 몬스터가 AGRO 타입이라면 일단 대상 추격.
+			UINT* targetID = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
+			if (monster->m_moveType == Type::Move::AGRO) {
+				g_gameServer.PathfindingNPC(key, *targetID);
+			}
+			else if (monster->m_waitType == Type::Wait::ROAMING) {
+				g_gameServer.RoamingNPC(key);
+			}
 
-			auto npc = g_gameServer.GetNPC(key);
-
-			short sectorX = npc->m_position.x / (VIEW_RANGE * 2);
-			short sectorY = npc->m_position.y / (VIEW_RANGE * 2);
+			short sectorX = monster->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = monster->m_position.y / (VIEW_RANGE * 2);
 			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 			// 주변 9개의 섹터 전부 조사
@@ -183,35 +187,22 @@ void WorkerThread(HANDLE hiocp)
 
 			}
 			if (activate) {
-				Timer::GetInstance().AddTimerEvent(key, TimerEvent::ROAMING, chrono::system_clock::now() + 1s, 0, -1);
+				Timer::GetInstance().AddTimerEvent(key, TimerEvent::MOVE,
+					chrono::system_clock::now() + monster->m_speed, 0, *targetID);
 			}
 			else {
-				npc->m_isActive = false;
+				monster->m_isActive = false;
 			}
 			delete expOverlapped;
 			break;
 		}
-		case TIMER_NPC_HELLO:
+		case TIMER_NPC_ATTACK:
 		{
 			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
 
 			npc->m_luaLock.lock();
 			lua_getglobal(npc->m_luaState, "event_player_move");
-			lua_pushnumber(npc->m_luaState, *cid);
-			lua_pcall(npc->m_luaState, 1, 0, 0);
-			npc->m_luaLock.unlock();
-
-			delete expOverlapped;
-			break;
-		}
-		case TIMER_NPC_BYE:
-		{
-			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
-			auto npc = g_gameServer.GetNPC(key);
-
-			npc->m_luaLock.lock();
-			lua_getglobal(npc->m_luaState, "event_player_leave");
 			lua_pushnumber(npc->m_luaState, *cid);
 			lua_pcall(npc->m_luaState, 1, 0, 0);
 			npc->m_luaLock.unlock();
@@ -403,14 +394,15 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		}
 
 		// 이동한 자리에 NPC가 있는지 검사
-		//g_gameServer.GetClient(cid)->m_viewLock.lock();
-		//auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
-		//g_gameServer.GetClient(cid)->m_viewLock.unlock();
-		//for (auto& id : npcCheckingViewList) {
-		//	if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
-		//		g_gameServer.WakeupNPC(id, cid);
-		//	}
-		//}
+		// 있을 경우 피격 데미지 부여
+		g_gameServer.GetClient(cid)->m_viewLock.lock();
+		auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
+		g_gameServer.GetClient(cid)->m_viewLock.unlock();
+		for (auto& id : npcCheckingViewList) {
+			if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
+				g_gameServer.WakeupNPC(id, cid);
+			}
+		}
 
 		break;
 	}

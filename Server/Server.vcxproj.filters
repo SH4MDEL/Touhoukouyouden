@@ -100,7 +100,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="npc.lua">
+    <None Include="ai.lua">
       <Filter>스크립트 파일</Filter>
     </None>
     <None Include="monster.lua">

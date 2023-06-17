@@ -4,7 +4,7 @@
 
 struct TimerEvent
 {
-	enum Type { FIXED, ROAMING, HEAL, ATTACK };
+	enum Type { MOVE, ATTACK, HEAL };
 
 	UINT m_id;
 	Type m_type;

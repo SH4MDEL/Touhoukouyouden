@@ -13,7 +13,8 @@ public:
 	lua_State*	m_luaState;
 	mutex		m_luaLock;
 
-	FLOAT		m_speed;
-	INT			m_type;
+	chrono::milliseconds m_speed;
+	INT			m_moveType;
+	INT			m_waitType;
 };
 

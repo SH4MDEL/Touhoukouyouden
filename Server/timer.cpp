@@ -21,17 +21,19 @@ void Timer::TimerThread(HANDLE hiocp)
 
 			switch (ev.m_type)
 			{
-			case TimerEvent::FIXED:
+			case TimerEvent::MOVE:
 			{
 				EXPOVERLAPPED* over = new EXPOVERLAPPED;
-				over->m_compType = COMP_TYPE::TIMER_NPC_FIXED;
+				over->m_compType = COMP_TYPE::TIMER_NPC_MOVE;
+				memcpy(over->m_sendMsg, &ev.m_targetid, sizeof(ev.m_targetid));
 				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
 				break;
 			}
-			case TimerEvent::ROAMING:
+			case TimerEvent::ATTACK:
 			{
 				EXPOVERLAPPED* over = new EXPOVERLAPPED;
-				over->m_compType = COMP_TYPE::TIMER_NPC_ROAMING;
+				over->m_compType = COMP_TYPE::TIMER_NPC_ATTACK;
+				memcpy(over->m_sendMsg, &ev.m_targetid, sizeof(ev.m_targetid));
 				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
 				break;
 			}

@@ -10,9 +10,10 @@ struct MonsterSetting
 	int level;
 	int exp;
 	int hp;
-	float speed;
+	chrono::milliseconds speed;
 	int atk;
-	int type;
+	int waitType;
+	int moveType;
 };
 
 class Setting : public Singleton<Setting>

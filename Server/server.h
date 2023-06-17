@@ -30,12 +30,14 @@ public:
 
 	void WakeupNPC(UINT id, UINT waker);
 	void SleepNPC(UINT id);
-	void MoveNPC(UINT id);
+	void RoamingNPC(UINT id);
+	void PathfindingNPC(UINT id, UINT target);
 
 	// Lua
 	INT Lua_GetX(lua_State* state);
 	INT Lua_GetY(lua_State* state);
 	int Lua_SendMessage(lua_State* state);
+	int Lua_AStar(lua_State* state);
 
 private:
 	array<array<int, W_WIDTH>, W_HEIGHT>			m_map;

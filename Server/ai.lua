@@ -16,6 +16,14 @@ function event_player_move(player)
 	end
 end
 
-function event_player_leave(player)
-	API_SendMessage(myid, player, "BYE");
+-- 리턴값에 따른 이동
+-- 0	dx = 0, dy = 1
+-- 1	dx = 0, dy = -1
+-- 2	dx = 1, dy = 0
+-- 3	dx = -1, dy = 0
+-- -1	길찾기 실패
+
+function pathfinding(target)
+	result = API_AStar(myid, target);
+	return result
 end

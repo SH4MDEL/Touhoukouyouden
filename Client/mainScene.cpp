@@ -78,6 +78,28 @@ void MainScene::BuildObjects()
 	g_textures.insert({ "SHROOM_WALK", shroomWalkTexture });
 	g_textures.insert({ "SHROOM_DIE", shroomDieTexture });
 
+	auto mushroomIdleTexture = make_shared<sf::Texture>();
+	mushroomIdleTexture->loadFromFile("Resource\\MONSTER\\MUSHROOM\\IDLE.png");
+	auto mushroomWalkTexture = make_shared<sf::Texture>();
+	mushroomWalkTexture->loadFromFile("Resource\\MONSTER\\MUSHROOM\\WALK.png");
+	auto mushroomDieTexture = make_shared<sf::Texture>();
+	mushroomDieTexture->loadFromFile("Resource\\MONSTER\\MUSHROOM\\DIE.png");
+
+	g_textures.insert({ "MUSHROOM_IDLE", mushroomIdleTexture });
+	g_textures.insert({ "MUSHROOM_WALK", mushroomWalkTexture });
+	g_textures.insert({ "MUSHROOM_DIE", mushroomDieTexture });
+
+	auto ribbonpigIdleTexture = make_shared<sf::Texture>();
+	ribbonpigIdleTexture->loadFromFile("Resource\\MONSTER\\RIBBONPIG\\IDLE.png");
+	auto ribbonpigWalkTexture = make_shared<sf::Texture>();
+	ribbonpigWalkTexture->loadFromFile("Resource\\MONSTER\\RIBBONPIG\\WALK.png");
+	auto ribbonpigDieTexture = make_shared<sf::Texture>();
+	ribbonpigDieTexture->loadFromFile("Resource\\MONSTER\\RIBBONPIG\\DIE.png");
+
+	g_textures.insert({ "RIBBONPIG_IDLE", ribbonpigIdleTexture });
+	g_textures.insert({ "RIBBONPIG_WALK", ribbonpigWalkTexture });
+	g_textures.insert({ "RIBBONPIG_DIE", ribbonpigDieTexture });
+
 	m_whiteTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
 	m_whiteTile->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
 	m_blackTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
@@ -326,6 +348,34 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
 			g_textures["SHROOM_DIE"], sf::IntRect{0, 0, 42, 37},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		break;
+	case Serial::Monster::MUSHROOM:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["MUSHROOM_IDLE"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{3, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["MUSHROOM_WALK"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["MUSHROOM_DIE"], sf::IntRect{0, 0, 42, 37},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		break;
+	case Serial::Monster::RIBBONPIG:
+		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
+			g_textures["RIBBONPIG_IDLE"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{3, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
+			g_textures["RIBBONPIG_WALK"], sf::IntRect{0, 0, 36, 36},
+			sf::Vector2i{4, 1}, 0.5f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Die, AnimationSet{
+			g_textures["RIBBONPIG_DIE"], sf::IntRect{0, 0, 42, 37},
 			sf::Vector2i{4, 1}, 0.5f, 0.f
 			});
 		break;

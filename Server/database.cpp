@@ -169,9 +169,13 @@ bool Database::UpdateUserData(UINT uid, INT x, INT y)
     handleLock.lock();
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
+    auto& client = g_gameServer.GetClient(uid);
+
     SQLWCHAR wstr[100];
     memset(wstr, 0, sizeof(wstr));
-    wsprintf(wstr, TEXT("EXEC UpdateUserData %S, %d, %d"), m_id[uid].c_str(), x, y);
+    wsprintf(wstr, TEXT("EXEC UpdateUserData %S, %d, %d, %d, %d, %d, %d"), 
+        m_id[uid].c_str(), client->m_serial, client->m_position.x, client->m_position.y,
+        client->m_level, client->m_exp, client->m_hp, client->m_maxHp);
     retcode = SQLExecDirect(hstmt, wstr, SQL_NTS);
 
 

@@ -12,6 +12,7 @@
 #include <array>
 #include <list>
 #include <queue>
+#include <set>
 #include <algorithm>
 #include <cmath>
 #include <chrono>
@@ -50,7 +51,7 @@ extern array<array<mutex, W_WIDTH / (VIEW_RANGE * 2) + 1>, W_HEIGHT / (VIEW_RANG
 
 enum COMP_TYPE { 
     OP_ACCEPT, OP_RECV, OP_SEND, 
-    TIMER_NPC_FIXED, TIMER_NPC_ROAMING, TIMER_NPC_HELLO, TIMER_NPC_BYE,
+    TIMER_NPC_MOVE, TIMER_NPC_ATTACK,
     DB_LOGIN_OK, DB_LOGIN_FAIL
 };
 
