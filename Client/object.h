@@ -14,6 +14,7 @@ public:
 	virtual void SetPosition(sf::Vector2f position);
 	virtual void SetSize(sf::Vector2f size);
 	virtual void SetSpriteTexture(const shared_ptr<sf::Texture>& texture, INT x, INT y, INT dx, INT dy);
+	virtual void SetSpriteColor(sf::Color color);
 
 	virtual void SetSpriteFlip();
 	virtual void SetStriteUnflip();
@@ -69,4 +70,6 @@ public:
 protected:
 	array<AnimationSet, AnimationState::Count>	m_animationSet;
 	AnimationState								m_state;
+
+	AnimationState								m_prevState;
 };

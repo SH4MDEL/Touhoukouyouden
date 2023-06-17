@@ -1,6 +1,6 @@
 #include "mainScene.h"
 
-MainScene::MainScene() : m_pressedMoveKey{0.f}
+MainScene::MainScene()
 {
 	BuildObjects();
 }
@@ -31,12 +31,15 @@ void MainScene::BuildObjects()
 	reimuWalkTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\WALK.png");
 	auto reimuAttackTexture = make_shared<sf::Texture>();
 	reimuAttackTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\ATTACK.png");
+	auto reimuSkillTexture = make_shared<sf::Texture>();
+	reimuSkillTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\SKILL.png");
 	auto reimuDieTexture = make_shared<sf::Texture>();
 	reimuDieTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\DIE.png");
 
 	g_textures.insert({ "REIMU_IDLE", reimuIdleTexture });
 	g_textures.insert({ "REIMU_WALK", reimuWalkTexture });
 	g_textures.insert({ "REIMU_ATTACK", reimuAttackTexture });
+	g_textures.insert({ "REIMU_SKILL", reimuSkillTexture });
 	g_textures.insert({ "REIMU_DIE", reimuDieTexture });
 
 	auto youmuIdleTexture = make_shared<sf::Texture>();
@@ -45,12 +48,15 @@ void MainScene::BuildObjects()
 	youmuWalkTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\WALK.png");
 	auto youmuAttackTexture = make_shared<sf::Texture>();
 	youmuAttackTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\ATTACK.png");
+	auto youmuSkillTexture = make_shared<sf::Texture>();
+	youmuSkillTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\SKILL.png");
 	auto youmuDieTexture = make_shared<sf::Texture>();
 	youmuDieTexture->loadFromFile("Resource\\CHARACTER\\KONPAKU_YOUMU\\DIE.png");
 
 	g_textures.insert({ "YOUMU_IDLE", youmuIdleTexture });
 	g_textures.insert({ "YOUMU_WALK", youmuWalkTexture });
 	g_textures.insert({ "YOUMU_ATTACK", youmuAttackTexture });
+	g_textures.insert({ "YOUMU_SKILL", youmuSkillTexture });
 	g_textures.insert({ "YOUMU_DIE", youmuDieTexture });
 
 	auto patchouliIdleTexture = make_shared<sf::Texture>();
@@ -59,12 +65,15 @@ void MainScene::BuildObjects()
 	patchouliWalkTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\WALK.png");
 	auto patchouliAttackTexture = make_shared<sf::Texture>();
 	patchouliAttackTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\ATTACK.png");
+	auto patchouliSkillTexture = make_shared<sf::Texture>();
+	patchouliSkillTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\SKILL.png");
 	auto patchouliDieTexture = make_shared<sf::Texture>();
 	patchouliDieTexture->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\DIE.png");
 
 	g_textures.insert({ "PATCHOULI_IDLE", patchouliIdleTexture });
 	g_textures.insert({ "PATCHOULI_WALK", patchouliWalkTexture });
 	g_textures.insert({ "PATCHOULI_ATTACK", patchouliAttackTexture });
+	g_textures.insert({ "PATCHOULI_SKILL", patchouliSkillTexture });
 	g_textures.insert({ "PATCHOULI_DIE", patchouliDieTexture });
 
 	auto shroomIdleTexture = make_shared<sf::Texture>();
@@ -163,69 +172,7 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 
 void MainScene::OnProcessingKeyboardMessage(float timeElapsed)
 {
-	if (GetAsyncKeyState(VK_LEFT) & 0x8000 || GetAsyncKeyState(VK_RIGHT) & 0x8000 ||
-		GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState(VK_DOWN) & 0x8000) {
-		m_pressedMoveKey += timeElapsed;
-		m_avatar->SetState(AnimationState::Walk);
-	}
-	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-		m_avatar->SetSpriteFlip();
-		if (m_pressedMoveKey >= m_moveTime) {
-			m_pressedMoveKey -= m_moveTime;
-			CS_MOVE_PACKET packet;
-			packet.size = sizeof(CS_MOVE_PACKET);
-			packet.type = CS_MOVE;
-			packet.direction = 3;
-			Send(&packet);
-#ifdef NETWORK_DEBUG
-			cout << "CS_MOVE 价脚" << endl;
-#endif
-		}
-	}
-	else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-		m_avatar->SetSpriteUnflip();
-		if (m_pressedMoveKey >= m_moveTime) {
-			m_pressedMoveKey -= m_moveTime;
-			CS_MOVE_PACKET packet;
-			packet.size = sizeof(CS_MOVE_PACKET);
-			packet.type = CS_MOVE;
-			packet.direction = 2;
-			Send(&packet);
-#ifdef NETWORK_DEBUG
-			cout << "CS_MOVE 价脚" << endl;
-#endif
-		}
-	}
-	else if (GetAsyncKeyState(VK_UP) & 0x8000) {
-		if (m_pressedMoveKey >= m_moveTime) {
-			m_pressedMoveKey -= m_moveTime;
-			CS_MOVE_PACKET packet;
-			packet.size = sizeof(CS_MOVE_PACKET);
-			packet.type = CS_MOVE;
-			packet.direction = 1;
-			Send(&packet);
-#ifdef NETWORK_DEBUG
-			cout << "CS_MOVE 价脚" << endl;
-#endif
-		}
-	}
-	else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
-		if (m_pressedMoveKey >= m_moveTime) {
-			m_pressedMoveKey -= m_moveTime;
-			CS_MOVE_PACKET packet;
-			packet.size = sizeof(CS_MOVE_PACKET);
-			packet.type = CS_MOVE;
-			packet.direction = 0;
-			Send(&packet);
-#ifdef NETWORK_DEBUG
-			cout << "CS_MOVE 价脚" << endl;
-#endif
-		}
-	}
-	else {
-		m_pressedMoveKey = 0.f;
-		if (m_avatar) m_avatar->SetState(AnimationState::Idle);
-	}
+	if (m_avatar) m_avatar->OnProcessingKeyboardMessage(timeElapsed);
 }
 
 void MainScene::OnProcessingInputTextMessage(sf::Event inputEvent)
@@ -293,7 +240,11 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			sf::Vector2i{8, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
-			g_textures["REIMU_ATTACK"], sf::IntRect{0, 0, 102, 100},
+			g_textures["REIMU_ATTACK"], sf::IntRect{0, 0, 122, 115},
+			sf::Vector2i{8, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Skill, AnimationSet{
+			g_textures["REIMU_SKILL"], sf::IntRect{0, 0, 102, 100},
 			sf::Vector2i{11, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
@@ -311,7 +262,11 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			sf::Vector2i{10, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
-			g_textures["YOUMU_ATTACK"], sf::IntRect{0, 0, 122, 84},
+			g_textures["YOUMU_ATTACK"], sf::IntRect{0, 0, 112, 124},
+			sf::Vector2i{11, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Skill, AnimationSet{
+			g_textures["YOUMU_SKILL"], sf::IntRect{0, 0, 122, 84},
 			sf::Vector2i{13, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
@@ -329,7 +284,11 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			sf::Vector2i{10, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
-			g_textures["PATCHOULI_ATTACK"], sf::IntRect{0, 0, 74, 106},
+			g_textures["PATCHOULI_ATTACK"], sf::IntRect{0, 0, 102, 106},
+			sf::Vector2i{7, 1}, 0.1f, 0.f
+			});
+		object->SetAnimationSet(AnimationState::Skill, AnimationSet{
+			g_textures["PATCHOULI_SKILL"], sf::IntRect{0, 0, 74, 106},
 			sf::Vector2i{11, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{

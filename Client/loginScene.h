@@ -22,8 +22,12 @@ private:
 	virtual void DestroyObject() final;
 
 private:
-	shared_ptr<ButtonUIObject>	m_gameStartUI;
+	shared_ptr<UIObject>		m_titleUI;
+	shared_ptr<ButtonUIObject>	m_loginUI;
+	shared_ptr<ButtonUIObject>	m_signupUI;
 	shared_ptr<InputTextBoxUI>	m_idBox;
+	shared_ptr<UIObject>		m_idMessageBox;
 	shared_ptr<InputTextBoxUI>	m_passwordBox;
+	shared_ptr<UIObject>		m_passwordMessageBox;
 };
 

@@ -12,6 +12,8 @@ public:
 	virtual void DoRecv() {};
 	virtual void DoSend(void* packet) {};
 
+	virtual void Attacked(UINT attacker) {};
+
 public:
 	mutex				m_mutex;
 	State				m_state;

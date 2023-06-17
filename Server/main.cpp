@@ -406,6 +406,15 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 		break;
 	}
+	case CS_ATTACK:
+	{
+		CS_ATTACK_PACKET* pk = reinterpret_cast<CS_ATTACK_PACKET*>(packetBuf);
+#ifdef NETWORK_DEBUG
+		cout << "CS_ATTACK ¼ö½Å" << endl;
+#endif
+		g_gameServer.Attack(cid, pk->direction);
+		break;
+	}
 	}
 }
 

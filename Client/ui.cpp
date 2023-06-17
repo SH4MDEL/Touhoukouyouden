@@ -15,6 +15,7 @@ void UIObject::Render(const shared_ptr<sf::RenderWindow>& window)
 {
 	Object::Render(window);
 
+	m_text.setFont(m_textFont);
 	window->draw(m_text);
 
 	for (auto& child : m_children) child->Render(window);

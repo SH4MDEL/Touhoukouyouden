@@ -7,6 +7,8 @@ public:
 	NPC();
 	~NPC() override = default;
 
+	void Attacked(UINT attacker) override;
+
 public:
 	atomic_bool	m_isActive;
 

@@ -1,7 +1,8 @@
 #include "player.h"
+#include "main.h"
 
 Player::Player(sf::Vector2f position, sf::Vector2f size) : AnimationObject(position, size),
-	m_chatStatus{ false }, m_chatTime {0.f}
+m_chatStatus{ false }, m_chatTime{ 0.f }, m_pressedMoveKey{0.f}, m_direction {2}
 {
 }
 
@@ -37,6 +38,92 @@ void Player::Render(const shared_ptr<sf::RenderWindow>& window)
 		auto size = m_chat.getGlobalBounds();
 		m_chat.setPosition(rx + 32 - size.width / 2, ry - 100);
 		window->draw(m_chat);
+	}
+}
+
+void Player::OnProcessingKeyboardMessage(float timeElapsed)
+{
+	if (m_state == AnimationState::Attack || m_state == AnimationState::Skill) return;
+
+	if (GetAsyncKeyState(VK_CONTROL)) {
+		SetState(AnimationState::Attack);
+		CS_ATTACK_PACKET packet;
+		packet.size = sizeof(CS_ATTACK_PACKET);
+		packet.type = CS_ATTACK;
+		packet.direction = m_direction;
+		Send(&packet);
+#ifdef NETWORK_DEBUG
+		cout << "CS_ATTACK 价脚" << endl;
+#endif
+		return;
+	}
+
+	if (GetAsyncKeyState(VK_LEFT) & 0x8000 || GetAsyncKeyState(VK_RIGHT) & 0x8000 ||
+		GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		m_pressedMoveKey += timeElapsed;
+		SetState(AnimationState::Walk);
+	}
+	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
+		SetSpriteFlip();
+		m_direction = 3;
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = m_direction;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 价脚" << endl;
+#endif
+		}
+	}
+	else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
+		SetSpriteUnflip();
+		m_direction = 2;
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = m_direction;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 价脚" << endl;
+#endif
+		}
+	}
+	else if (GetAsyncKeyState(VK_UP) & 0x8000) {
+		m_direction = 1;
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = m_direction;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 价脚" << endl;
+#endif
+		}
+	}
+	else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		m_direction = 0;
+		if (m_pressedMoveKey >= m_moveTime) {
+			m_pressedMoveKey -= m_moveTime;
+			CS_MOVE_PACKET packet;
+			packet.size = sizeof(CS_MOVE_PACKET);
+			packet.type = CS_MOVE;
+			packet.direction = m_direction;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_MOVE 价脚" << endl;
+#endif
+		}
+	}
+	else {
+		m_pressedMoveKey = 0.f;
+		SetState(AnimationState::Idle);
 	}
 }
 

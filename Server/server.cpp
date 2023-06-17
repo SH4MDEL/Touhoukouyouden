@@ -202,6 +202,37 @@ void GameServer::Move(UINT id, UCHAR direction)
 	}
 }
 
+void GameServer::Attack(UINT id, UCHAR direction)
+{
+	Short2 from = GetPlayerPosition(id);
+	auto dx = Move::dx[direction];
+	auto dy = Move::dy[direction];
+	Short2 to = { from.x + (SHORT)dx , from.y + (SHORT)dy };
+	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
+		return;
+	}
+	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
+
+
+	unordered_set<int> monsterList;
+	// 공격 목표에 해당하는 섹터 하나만 조사 (공격 범위는 1칸이므로)
+	short sectorX = to.x / (VIEW_RANGE * 2);
+	short sectorY = to.y / (VIEW_RANGE * 2);
+	g_sectorLock[sectorY][sectorX].lock();
+	for (auto& cid : g_sector[sectorY][sectorX]) {
+		if (cid < MAX_USER) continue;
+		if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
+		if (m_objects[cid]->m_position == to) {
+			monsterList.insert(cid);
+		}
+	}
+	g_sectorLock[sectorY][sectorX].unlock();
+
+	for (auto monster : monsterList) {
+		m_objects[monster]->Attacked(id);
+	}
+}
+
 shared_ptr<CLIENT> GameServer::GetClient(UINT id)
 {
 	return static_pointer_cast<CLIENT>(m_objects[id]);

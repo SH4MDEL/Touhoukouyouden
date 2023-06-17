@@ -83,6 +83,7 @@ enum AnimationState {
 	Idle,
 	Walk,
 	Attack,
+	Skill,
 	Die,
 	Count
 };
@@ -189,6 +190,12 @@ struct CS_CHAT_PACKET {
 	unsigned short size;			// 크기가 가변이다, mess가 작으면 size도 줄이자.
 	char	type;
 	char	mess[CHAT_SIZE];
+};
+
+struct CS_ATTACK_PACKET {
+	unsigned short size;
+	char	type;
+	unsigned char direction;
 };
 
 struct CS_TELEPORT_PACKET {

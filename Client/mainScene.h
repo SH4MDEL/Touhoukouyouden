@@ -31,8 +31,6 @@ private:
 
 private:
 	array<array<int, W_WIDTH>, W_HEIGHT> m_map;
-	const float			m_moveTime = 0.01f;
-	float				m_pressedMoveKey;
 	shared_ptr<Object>	m_whiteTile;
 	shared_ptr<Object>	m_blackTile;
 

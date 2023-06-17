@@ -30,10 +30,11 @@ using namespace std;
 
 constexpr auto SCREEN_WIDTH = 16;
 constexpr auto SCREEN_HEIGHT = 16;
-
+// 1440 1040
 constexpr auto TILE_WIDTH = 65;
-constexpr auto WINDOW_WIDTH = SCREEN_WIDTH * TILE_WIDTH;   // size of window
-constexpr auto WINDOW_HEIGHT = SCREEN_WIDTH * TILE_WIDTH;
+constexpr auto PLAYER_STATUS_AREA = 400;
+constexpr auto WINDOW_WIDTH = SCREEN_WIDTH * TILE_WIDTH + PLAYER_STATUS_AREA;   // size of window
+constexpr auto WINDOW_HEIGHT = SCREEN_HEIGHT * TILE_WIDTH;
 
 class GameFramework;
 extern GameFramework				g_gameFramework;
