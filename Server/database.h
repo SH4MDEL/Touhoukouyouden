@@ -9,11 +9,12 @@ struct DataBaseUserInfo
 	char* password;
 	int xPosition;
 	int yPosition;
+	unsigned char serial;
 };
 
 struct DatabaseEvent
 {
-	enum Type { LOGIN, LOGOUT, UPDATE };
+	enum Type { LOGIN, LOGOUT, UPDATE, SIGNUP };
 
 	UINT m_id;
 	Type m_type;
@@ -35,6 +36,7 @@ private:
 	bool Login(UINT uid, const char* id, const char* password);
 	bool Logout(UINT uid, INT x, INT y);
 	bool UpdateUserData(UINT uid, INT x, INT y);
+	bool Signup(const char* id, const char* password, const int serial);
 
 	void ShowError(SQLHANDLE handle, SQLSMALLINT type, RETCODE retcode);
 

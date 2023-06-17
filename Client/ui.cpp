@@ -13,8 +13,11 @@ void UIObject::Update(float timeElapsed)
 
 void UIObject::Render(const shared_ptr<sf::RenderWindow>& window)
 {
+	if (!m_enable) return;
+
 	Object::Render(window);
 
+	SetPosition(m_position);
 	m_text.setFont(m_textFont);
 	window->draw(m_text);
 
@@ -39,6 +42,16 @@ void UIObject::SetPosition(sf::Vector2f position)
 	float xPos = m_position.x + (m_sprite.getLocalBounds().width * m_size.x / 2) - (m_text.getLocalBounds().width / 2);
 	float yPos = m_position.y + (m_sprite.getLocalBounds().height * m_size.y / 2) - (m_text.getLocalBounds().height);
 	m_text.setPosition(xPos, yPos);
+}
+
+void UIObject::SetEnable()
+{
+	m_enable = true;
+}
+
+void UIObject::SetDisable()
+{
+	m_enable = false;
 }
 
 void UIObject::SetChild(const shared_ptr<UIObject>& uiObject)

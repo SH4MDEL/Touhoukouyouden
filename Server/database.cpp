@@ -88,6 +88,25 @@ void Database::DatabaseThread(HANDLE hiocp)
                 UpdateUserData(ev.m_id, ev.m_dbInfo.xPosition, ev.m_dbInfo.yPosition);
                 break;
             }
+            case DatabaseEvent::SIGNUP:
+            {
+                if (Signup(ev.m_dbInfo.id, ev.m_dbInfo.password, ev.m_dbInfo.serial)) {
+                    EXPOVERLAPPED* over = new EXPOVERLAPPED;
+                    over->m_compType = COMP_TYPE::DB_SIGNUP_OK;
+                    memcpy(over->m_sendMsg, &ev.m_id, sizeof(ev.m_id));
+                    memcpy(over->m_sendMsg + sizeof(ev.m_id), &ev.m_dbInfo, sizeof(ev.m_dbInfo));
+
+                    // 완료 결과 Worker Thread에 통지
+                    PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+                }
+                else {
+                    EXPOVERLAPPED* over = new EXPOVERLAPPED;
+                    over->m_compType = COMP_TYPE::DB_SIGNUP_FAIL;
+                    memcpy(over->m_sendMsg, &ev.m_id, sizeof(ev.m_id));
+                    PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+                }
+                break;
+            }
             }
             continue;
         }
@@ -200,6 +219,39 @@ bool Database::UpdateUserData(UINT uid, INT x, INT y)
         return false;
     }
 
+}
+
+bool Database::Signup(const char* id, const char* password, const int serial)
+{
+    handleLock.lock();
+    retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+    SQLWCHAR wstr[100];
+    memset(wstr, 0, sizeof(wstr));
+    wsprintf(wstr, TEXT("EXEC Signup %S, %S, %d"), id, password, serial);
+    retcode = SQLExecDirect(hstmt, wstr, SQL_NTS);
+
+
+    if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+        if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
+            ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+            handleLock.unlock();
+            return false;
+        }
+        if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+            handleLock.unlock();
+            return true;
+        }
+        else {
+            handleLock.unlock();
+            return false;
+        }
+    }
+    else {
+        ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+        handleLock.unlock();
+        return false;
+    }
 }
 
 void Database::ShowError(SQLHANDLE handle, SQLSMALLINT type, RETCODE retcode)

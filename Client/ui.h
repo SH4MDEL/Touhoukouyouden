@@ -21,6 +21,8 @@ public:
 
 	virtual void SetPosition(sf::Vector2f position) override;
 
+	void SetEnable();
+	void SetDisable();
 	void SetChild(const shared_ptr<UIObject>& uiObject);
 
 	void SetText(const char* text);

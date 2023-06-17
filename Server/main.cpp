@@ -301,6 +301,38 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
+		case DB_SIGNUP_OK:
+		{
+			UINT* cid = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
+			DataBaseUserInfo* userinfo =
+				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
+
+			SC_SIGNUP_OK_PACKET sendpk;
+			sendpk.size = sizeof(SC_SIGNUP_OK_PACKET);
+			sendpk.type = SC_SIGNUP_OK;
+			g_gameServer.GetClient(*cid)->DoSend(&sendpk);
+#ifdef NETWORK_DEBUG
+			cout << "SC_SIGNUP_OK 송신 - ID : " << cid << endl;
+#endif
+			delete expOverlapped;
+			break;
+		}
+		case DB_SIGNUP_FAIL:
+		{
+			UINT* cid = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
+			DataBaseUserInfo* userinfo =
+				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
+
+			SC_SIGNUP_FAIL_PACKET sendpk;
+			sendpk.size = sizeof(SC_SIGNUP_FAIL_PACKET);
+			sendpk.type = SC_SIGNUP_FAIL;
+			g_gameServer.GetClient(*cid)->DoSend(&sendpk);
+#ifdef NETWORK_DEBUG
+			cout << "SC_SIGNUP_FAIL 송신 - ID : " << cid << endl;
+#endif
+			delete expOverlapped;
+			break;
+		}
 		}
 	}
 }
@@ -413,6 +445,19 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		cout << "CS_ATTACK 수신" << endl;
 #endif
 		g_gameServer.Attack(cid, pk->direction);
+		break;
+	}
+	case CS_SIGNUP:
+	{
+		// 새로 플레이어 생성
+		CS_SIGNUP_PACKET* pk = reinterpret_cast<CS_SIGNUP_PACKET*>(packetBuf);
+#ifdef NETWORK_DEBUG
+		cout << "CS_SIGNUP 수신" << endl;
+#endif
+		Database::GetInstance().AddDatabaseEvent(DatabaseEvent{
+			(UINT)cid, DatabaseEvent::Type::SIGNUP,
+			DataBaseUserInfo { pk->id, pk->password, -1, -1, pk->serial }
+			});
 		break;
 	}
 	}

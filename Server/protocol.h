@@ -25,6 +25,7 @@ constexpr char		CS_CHAT = 2;
 constexpr char		CS_ATTACK = 3;
 constexpr char		CS_TELEPORT = 4; // RANDOM한 위치로 Teleport, Stress Test할 때 Hot Spot현상을 피하기 위해 구현
 constexpr char		CS_LOGOUT = 5;
+constexpr char		CS_SIGNUP = 6;
 
 constexpr char		SC_LOGIN_INFO = 2;
 constexpr char		SC_ADD_OBJECT = 3;
@@ -34,6 +35,8 @@ constexpr char		SC_CHAT = 6;
 constexpr char		SC_LOGIN_OK = 7;
 constexpr char		SC_LOGIN_FAIL = 8;
 constexpr char		SC_STAT_CHANGE = 9;
+constexpr char		SC_SIGNUP_OK = 10;
+constexpr char		SC_SIGNUP_FAIL = 11;
 
 
 // 오브젝트들의 외형을 결정하는 시리얼 넘버이다.
@@ -209,6 +212,15 @@ struct CS_LOGOUT_PACKET
 	char type;
 };
 
+struct CS_SIGNUP_PACKET
+{
+	unsigned short size;
+	char type;
+	char id[ID_SIZE];
+	char password[PASSWORD_SIZE];
+	unsigned char serial;
+};
+
 /*
  *  Server to Client
  */
@@ -282,6 +294,18 @@ struct SC_STAT_CHANGE_PACKET
 	int		max_hp;
 	int		exp;
 	int		level;
+};
+
+struct SC_SIGNUP_OK_PACKET
+{
+	unsigned short size;
+	char type;
+};
+
+struct SC_SIGNUP_FAIL_PACKET
+{
+	unsigned short size;
+	char type;
 };
 
 #pragma pack(pop)
