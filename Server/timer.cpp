@@ -37,6 +37,12 @@ void Timer::TimerThread(HANDLE hiocp)
 				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
 				break;
 			}
+			case TimerEvent::RESURRECTION:
+			{
+				EXPOVERLAPPED* over = new EXPOVERLAPPED;
+				over->m_compType = COMP_TYPE::TIMER_NPC_RESURRECTION;
+				PostQueuedCompletionStatus(hiocp, 1, ev.m_id, &over->m_overlapped);
+			}
 			}
 			continue;
 		}

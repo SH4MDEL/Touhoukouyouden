@@ -158,6 +158,7 @@
     <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="character.lua" />
     <None Include="monster.lua" />
     <None Include="ai.lua" />
   </ItemGroup>

@@ -126,7 +126,7 @@ void LoginScene::BuildObjects()
 	m_characterSelectBox = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
 	m_characterSelectBox->SetPosition(sf::Vector2f{ WINDOW_WIDTH / 2 - 487, WINDOW_HEIGHT / 2 - 300 });
 	m_characterSelectBox->SetSpriteTexture(g_textures["CHARACTERSELECTBOXTEXTURE"], 0, 0, 974, 600);
-	//m_characterSelectBox->SetDisable();
+	m_characterSelectBox->SetDisable();
 
 	m_characterSelectCancelBox = make_shared<ButtonUIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
 	m_characterSelectCancelBox->SetPosition(sf::Vector2f{ WINDOW_WIDTH / 2 + 437, WINDOW_HEIGHT / 2 - 310 });
@@ -250,21 +250,12 @@ void LoginScene::ProcessPacket(char* buf)
 {
 	switch (buf[2])
 	{
-	case SC_LOGIN_INFO:
-	{
-		SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
-		g_clientID = pk->id;
-		g_gameFramework.ChangeScene(Tag::Main);
-#ifdef NETWORK_DEBUG
-		cout << "SC_LOGIN_INFO 수신" << endl;
-#endif
-		break;
-	}
 	case SC_LOGIN_OK:
 	{
 #ifdef NETWORK_DEBUG
 		cout << "SC_LOGIN_OK 수신" << endl;
 #endif
+		g_gameFramework.ChangeScene(Tag::Main);
 		break;
 	}
 	case SC_LOGIN_FAIL:

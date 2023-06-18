@@ -43,7 +43,9 @@ void Player::Render(const shared_ptr<sf::RenderWindow>& window)
 
 void Player::OnProcessingKeyboardMessage(float timeElapsed)
 {
-	if (m_state == AnimationState::Attack || m_state == AnimationState::Skill) return;
+	if (m_state == AnimationState::Attack || 
+		m_state == AnimationState::Skill ||
+		m_state == AnimationState::Die) return;
 
 	if (GetAsyncKeyState(VK_CONTROL)) {
 		SetState(AnimationState::Attack);

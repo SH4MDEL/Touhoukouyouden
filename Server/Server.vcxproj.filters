@@ -106,5 +106,8 @@
     <None Include="monster.lua">
       <Filter>스크립트 파일</Filter>
     </None>
+    <None Include="character.lua">
+      <Filter>스크립트 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>

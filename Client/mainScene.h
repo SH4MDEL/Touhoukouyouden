@@ -1,6 +1,7 @@
 #pragma once
 #include "scene.h"
 #include "object.h"
+#include "ui.h"
 #include "player.h"
 
 class MainScene : public Scene
@@ -31,8 +32,15 @@ private:
 
 private:
 	array<array<int, W_WIDTH>, W_HEIGHT> m_map;
-	shared_ptr<Object>	m_whiteTile;
-	shared_ptr<Object>	m_blackTile;
+
+	shared_ptr<UIObject>	m_levelUI;
+	shared_ptr<UIObject>	m_hpUI;
+	shared_ptr<UIObject>	m_expUI;
+
+	shared_ptr<Object>	m_block;
+	shared_ptr<Object>	m_nonblock;
+	shared_ptr<Object>	m_henesysBlock;
+	shared_ptr<Object>	m_henesysNonblock;
 
 	shared_ptr<Player>	m_avatar;
 	unordered_map<INT, shared_ptr<Player>> m_players;

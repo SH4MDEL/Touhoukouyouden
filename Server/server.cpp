@@ -34,7 +34,11 @@ void GameServer::InitializeMonster()
 	for (UINT i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
 		auto npc = static_pointer_cast<NPC>(m_objects[i]);
 		npc->m_id = i;
-		npc->m_serial = Serial::Monster::RIBBONPIG;
+		auto randomInt = Utiles::GetRandomINT(1, 10);
+		if (randomInt == 1) npc->m_serial = Serial::Monster::RIBBONPIG;
+		if (randomInt >= 2 && randomInt < 5) npc->m_serial = Serial::Monster::MUSHROOM;
+		if (randomInt >= 5 && randomInt <= 10) npc->m_serial = Serial::Monster::SHROOM;
+
 		const auto setting = Setting::GetInstance().GetMonsterSetting(npc->m_serial);
 
 		do 
@@ -54,27 +58,27 @@ void GameServer::InitializeMonster()
 		npc->m_moveType = setting.moveType;
 		npc->m_waitType = setting.waitType;
 
-		npc->m_state = OBJECT::INGAME;
+		npc->m_state = OBJECT::LIVE;
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
 		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
 
-		npc->m_luaState = luaL_newstate();
-		lua_gc(npc->m_luaState, LUA_GCSTOP);
+		npc->m_monsterState = luaL_newstate();
+		lua_gc(npc->m_monsterState, LUA_GCSTOP);
 
-		luaL_openlibs(npc->m_luaState);
-		luaL_loadfile(npc->m_luaState, "ai.lua");
-		lua_pcall(npc->m_luaState, 0, 0, 0);
+		luaL_openlibs(npc->m_monsterState);
+		luaL_loadfile(npc->m_monsterState, "ai.lua");
+		lua_pcall(npc->m_monsterState, 0, 0, 0);
 
-		lua_getglobal(npc->m_luaState, "set_uid");
-		lua_pushnumber(npc->m_luaState, npc->m_id);
-		lua_pcall(npc->m_luaState, 1, 0, 0);
-		lua_pop(npc->m_luaState, 1);
+		lua_getglobal(npc->m_monsterState, "set_uid");
+		lua_pushnumber(npc->m_monsterState, npc->m_id);
+		lua_pcall(npc->m_monsterState, 1, 0, 0);
+		lua_pop(npc->m_monsterState, 1);
 
-		lua_register(npc->m_luaState, "API_GetX", API_GetX);
-		lua_register(npc->m_luaState, "API_GetY", API_GetY);
-		lua_register(npc->m_luaState, "API_SendMessage", API_SendMessage);
-		lua_register(npc->m_luaState, "API_AStar", API_AStar);
+		lua_register(npc->m_monsterState, "API_GetX", API_GetX);
+		lua_register(npc->m_monsterState, "API_GetY", API_GetY);
+		lua_register(npc->m_monsterState, "API_SendMessage", API_SendMessage);
+		lua_register(npc->m_monsterState, "API_AStar", API_AStar);
 
 	}
 	cout << "Initialize Monster end\n";
@@ -113,6 +117,13 @@ void GameServer::InputClient(UINT id, int serial, Short2 position, int level, in
 	client->m_hp = hp;
 	client->m_maxHp = maxHp;
 
+	const auto setting = Setting::GetInstance().GetCharacterSetting(client->m_serial);
+
+	client->m_baseAtk = setting.baseAtk;
+	client->m_bonusAtk = setting.bonusAtk;
+	client->m_baseSkill = setting.baseSkill;
+	client->m_bonusSkill = setting.bonusSkill;
+
 	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].lock();
 	g_sector[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].insert(id);
 	g_sectorLock[client->m_position.y / (VIEW_RANGE * 2)][client->m_position.x / (VIEW_RANGE * 2)].unlock();
@@ -135,7 +146,7 @@ void GameServer::ExitClient(UINT id)
 		auto client = static_pointer_cast<CLIENT>(m_objects[i]);
 		{
 			unique_lock<mutex> lock(client->m_mutex);
-			if (client->m_state != OBJECT::INGAME) continue;
+			if (!(client->m_state & OBJECT::INGAME)) continue;
 		}
 		if (client->m_id == id) continue;
 		client->SendExitPlayer(id);
@@ -221,7 +232,7 @@ void GameServer::Attack(UINT id, UCHAR direction)
 	g_sectorLock[sectorY][sectorX].lock();
 	for (auto& cid : g_sector[sectorY][sectorX]) {
 		if (cid < MAX_USER) continue;
-		if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
+		if (!(m_objects[cid]->m_state & OBJECT::LIVE)) continue;
 		if (m_objects[cid]->m_position == to) {
 			monsterList.insert(cid);
 		}
@@ -268,6 +279,7 @@ void GameServer::SleepNPC(UINT id)
 void GameServer::RoamingNPC(UINT id)
 {
 	auto npc = static_pointer_cast<NPC>(m_objects[id]);
+	if (!(npc->m_state & OBJECT::LIVE)) return;
 
 	unordered_set<int> viewList;
 	{
@@ -285,7 +297,7 @@ void GameServer::RoamingNPC(UINT id)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
+				if (!(m_objects[cid]->m_state & OBJECT::INGAME)) continue;
 				if (CanSee(id, cid)) viewList.insert(cid);
 				// 섹터 내의 오브젝트 중 시야 안의 오브젝트만 뷰 리스트에 추가
 			}
@@ -350,7 +362,7 @@ void GameServer::RoamingNPC(UINT id)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (npc->m_state != OBJECT::INGAME) continue;
+				if (!(npc->m_state & OBJECT::INGAME)) continue;
 				if (CanSee(id, cid)) newViewList.insert(cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
@@ -369,7 +381,7 @@ void GameServer::RoamingNPC(UINT id)
 		else {
 			// 있다면 이동 시킨다.
 			client->m_viewLock.unlock();
-			client->SendObjectInfo(id);
+			client->SendMoveObject(id);
 		}
 	}
 
@@ -385,16 +397,17 @@ void GameServer::RoamingNPC(UINT id)
 void GameServer::PathfindingNPC(UINT id, UINT target)
 {
 	auto& monster = g_gameServer.GetNPC(id);
-	auto& targetP = g_gameServer.GetClient(target)->m_position;
-	if (monster->m_position == targetP) return;
+	if (!(monster->m_state & OBJECT::LIVE)) return;
+	auto& targetPosition = g_gameServer.GetClient(target)->m_position;
+	if (monster->m_position == targetPosition) return;
 
 	monster->m_luaLock.lock();
-	lua_getglobal(monster->m_luaState, "pathfinding");
-	lua_pushnumber(monster->m_luaState, target);
-	lua_pcall(monster->m_luaState, 1, 1, 0);
+	lua_getglobal(monster->m_monsterState, "pathfinding");
+	lua_pushnumber(monster->m_monsterState, target);
+	lua_pcall(monster->m_monsterState, 1, 1, 0);
 
-	int result = lua_tointeger(monster->m_luaState, -1);
-	lua_pop(monster->m_luaState, 1);
+	int result = lua_tointeger(monster->m_monsterState, -1);
+	lua_pop(monster->m_monsterState, 1);
 	monster->m_luaLock.unlock();
 
 	if (result == -1) {
@@ -419,7 +432,7 @@ void GameServer::PathfindingNPC(UINT id, UINT target)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (m_objects[cid]->m_state != OBJECT::INGAME) continue;
+				if (!(m_objects[cid]->m_state & OBJECT::INGAME)) continue;
 				if (CanSee(id, cid)) viewList.insert(cid);
 				// 섹터 내의 오브젝트 중 시야 안의 오브젝트만 뷰 리스트에 추가
 			}
@@ -484,7 +497,7 @@ void GameServer::PathfindingNPC(UINT id, UINT target)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& cid : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (cid >= MAX_USER) continue;
-				if (monster->m_state != OBJECT::INGAME) continue;
+				if (!(monster->m_state & OBJECT::INGAME)) continue;
 				if (CanSee(id, cid)) newViewList.insert(cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
@@ -503,7 +516,7 @@ void GameServer::PathfindingNPC(UINT id, UINT target)
 		else {
 			// 있다면 이동 시킨다.
 			client->m_viewLock.unlock();
-			client->SendObjectInfo(id);
+			client->SendMoveObject(id);
 		}
 	}
 

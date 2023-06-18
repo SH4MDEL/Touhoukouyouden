@@ -67,9 +67,13 @@ public:
 	void SetAnimationSet(AnimationState state, const AnimationSet& animationSet);
 	void SetState(AnimationState state);
 
+	void SetDeadEvent(const function<void()>& deadEvent);
+
 protected:
 	array<AnimationSet, AnimationState::Count>	m_animationSet;
 	AnimationState								m_state;
 
 	AnimationState								m_prevState;
+
+	function<void()>		m_deadEvent;
 };

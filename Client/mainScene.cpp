@@ -20,10 +20,33 @@ void MainScene::BuildObjects()
 		}
 	}
 
+	m_hpUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
+	m_hpUI->SetPosition(sf::Vector2f{ 1200.f, 100.f });
+	m_hpUI->SetText("");
+	m_hpUI->SetTextFont(g_font);
+	m_hpUI->SetTextColor(sf::Color(255, 255, 255));
+
+	m_levelUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
+	m_levelUI->SetPosition(sf::Vector2f{ 1200.f, 150.f });
+	m_levelUI->SetText("");
+	m_levelUI->SetTextFont(g_font);
+	m_levelUI->SetTextColor(sf::Color(255, 255, 255));
+
+	m_expUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
+	m_expUI->SetPosition(sf::Vector2f{ 1200.f, 200.f });
+	m_expUI->SetText("");
+	m_expUI->SetTextFont(g_font);
+	m_expUI->SetTextColor(sf::Color(255, 255, 255));
+
 	auto mapTexture = make_shared<sf::Texture>();
 	mapTexture->loadFromFile("Resource\\Chessboard.png");
-
+	auto henesysBlock = make_shared<sf::Texture>();
+	henesysBlock->loadFromFile("Resource\\TILE\\HENESYS_BLOCKING.png");
+	auto henesysNonblock = make_shared<sf::Texture>();
+	henesysNonblock->loadFromFile("Resource\\TILE\\HENESYS_NONBLOCKING.png");
 	g_textures.insert({ "MAP", mapTexture });
+	g_textures.insert({ "HENESYS_BLOCKING", henesysBlock });
+	g_textures.insert({ "HENESYS_NONBLOCKING", henesysNonblock });
 
 	auto reimuIdleTexture = make_shared<sf::Texture>();
 	reimuIdleTexture->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\IDLE.png");
@@ -109,10 +132,14 @@ void MainScene::BuildObjects()
 	g_textures.insert({ "RIBBONPIG_WALK", ribbonpigWalkTexture });
 	g_textures.insert({ "RIBBONPIG_DIE", ribbonpigDieTexture });
 
-	m_whiteTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-	m_whiteTile->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
-	m_blackTile = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
-	m_blackTile->SetSpriteTexture(g_textures["MAP"], 129, 0, TILE_WIDTH, TILE_WIDTH);
+	m_block = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+	m_block->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
+	m_nonblock = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+	m_nonblock->SetSpriteTexture(g_textures["MAP"], 129, 0, TILE_WIDTH, TILE_WIDTH);
+	m_henesysBlock = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+	m_henesysBlock->SetSpriteTexture(g_textures["HENESYS_BLOCKING"], 0, 0, TILE_WIDTH, TILE_WIDTH);
+	m_henesysNonblock = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
+	m_henesysNonblock->SetSpriteTexture(g_textures["HENESYS_NONBLOCKING"], 0, 0, TILE_WIDTH, TILE_WIDTH);
 }
 
 void MainScene::DestroyObject()
@@ -139,20 +166,20 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 			int tileY = j + g_topY;
 			if (tileX < 0 || tileX > W_WIDTH || tileY < 0 || tileY > W_HEIGHT) continue;
 			if (m_map[tileY][tileX] == TileInfo::UNDEFINED_NONBLOCK) {
-				m_blackTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
-				m_blackTile->Render(window);
+				m_nonblock->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_nonblock->Render(window);
 			}
 			else if (m_map[tileY][tileX] == TileInfo::UNDEFINED_BLOCK) {
-				m_whiteTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
-				m_whiteTile->Render(window);
+				m_block->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_block->Render(window);
 			}
 			else if (m_map[tileY][tileX] == TileInfo::HENESYS_NONBLOCK) {
-				m_blackTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
-				m_blackTile->Render(window);
+				m_henesysNonblock->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_henesysNonblock->Render(window);
 			}
 			else if (m_map[tileY][tileX] == TileInfo::HENESYS_BLOCK) {
-				m_whiteTile->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
-				m_whiteTile->Render(window);
+				m_henesysBlock->SetPosition({ (float)(TILE_WIDTH * i), (float)(TILE_WIDTH * j) });
+				m_henesysBlock->Render(window);
 			}
 		}
 	}
@@ -168,6 +195,10 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 		text.setString(buf);
 		g_window->draw(text);
 	}
+
+	if (m_hpUI) m_hpUI->Render(window);
+	if (m_levelUI) m_levelUI->Render(window);
+	if (m_expUI) m_expUI->Render(window);
 }
 
 void MainScene::OnProcessingKeyboardMessage(float timeElapsed)
@@ -299,43 +330,43 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 	case Serial::Monster::SHROOM:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
 			g_textures["SHROOM_IDLE"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{3, 1}, 0.5f, 0.f
+			sf::Vector2i{3, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
 			g_textures["SHROOM_WALK"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			sf::Vector2i{4, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
 			g_textures["SHROOM_DIE"], sf::IntRect{0, 0, 42, 37},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			sf::Vector2i{4, 1}, 0.2f, 0.f
 			});
 		break;
 	case Serial::Monster::MUSHROOM:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
-			g_textures["MUSHROOM_IDLE"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{3, 1}, 0.5f, 0.f
+			g_textures["MUSHROOM_IDLE"], sf::IntRect{0, 0, 63, 58},
+			sf::Vector2i{2, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
-			g_textures["MUSHROOM_WALK"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			g_textures["MUSHROOM_WALK"], sf::IntRect{0, 0, 66, 66},
+			sf::Vector2i{3, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
-			g_textures["MUSHROOM_DIE"], sf::IntRect{0, 0, 42, 37},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			g_textures["MUSHROOM_DIE"], sf::IntRect{0, 0, 61, 59},
+			sf::Vector2i{3, 1}, 0.2f, 0.f
 			});
 		break;
 	case Serial::Monster::RIBBONPIG:
 		object->SetAnimationSet(AnimationState::Idle, AnimationSet{
-			g_textures["RIBBONPIG_IDLE"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{3, 1}, 0.5f, 0.f
+			g_textures["RIBBONPIG_IDLE"], sf::IntRect{0, 0, 70, 50},
+			sf::Vector2i{3, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
-			g_textures["RIBBONPIG_WALK"], sf::IntRect{0, 0, 36, 36},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			g_textures["RIBBONPIG_WALK"], sf::IntRect{0, 0, 67, 50},
+			sf::Vector2i{3, 1}, 0.3f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
-			g_textures["RIBBONPIG_DIE"], sf::IntRect{0, 0, 42, 37},
-			sf::Vector2i{4, 1}, 0.5f, 0.f
+			g_textures["RIBBONPIG_DIE"], sf::IntRect{0, 0, 73, 56},
+			sf::Vector2i{3, 1}, 0.2f, 0.f
 			});
 		break;
 	}
@@ -345,13 +376,36 @@ void MainScene::ProcessPacket(char* buf)
 {
 	switch (buf[2])
 	{
+	case SC_LOGIN_INFO:
+	{
+		SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
+		string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
+		m_hpUI->SetText(hp.c_str());
+		string level = "Level : " + to_string(pk->level);
+		m_levelUI->SetText(level.c_str());
+		string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
+		m_expUI->SetText(exp.c_str());
+#ifdef NETWORK_DEBUG
+		cout << "SC_LOGIN_INFO 수신" << endl;
+#endif
+		break;
+	}
 	case SC_ADD_OBJECT:
 	{
 		SC_ADD_OBJECT_PACKET* pk = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(buf);
 		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y};
 		AddPlayer(pk->id, pk->serial, pos, pk->name);
 #ifdef NETWORK_DEBUG
-		cout << "SC_ADD_OBJECT 수신" << endl;
+		cout << "SC_ADD_OBJECT 수신, serial : " << pk->serial << endl;
+#endif
+		break;
+	}
+	case SC_REMOVE_OBJECT:
+	{
+		SC_REMOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(buf);
+		ExitPlayer(pk->id);
+#ifdef NETWORK_DEBUG
+		cout << "SC_REMOVE_OBJECT 수신" << endl;
 #endif
 		break;
 	}
@@ -374,12 +428,39 @@ void MainScene::ProcessPacket(char* buf)
 #endif
 		break;
 	}
-	case SC_REMOVE_OBJECT:
+	case SC_STAT_CHANGE:
 	{
-		SC_REMOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(buf);
-		ExitPlayer(pk->id);
+		SC_STAT_CHANGE_PACKET* pk = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(buf);
+		string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
+		m_hpUI->SetText(hp.c_str());
+		string level = "Level : " + to_string(pk->level);
+		m_levelUI->SetText(level.c_str());
+		string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
+		m_expUI->SetText(exp.c_str());
 #ifdef NETWORK_DEBUG
-		cout << "SC_REMOVE_OBJECT 수신" << endl;
+		cout << "SC_STAT_CHANGE 수신" << endl;
+#endif
+		break;
+	}
+	case SC_CHANGE_HP:
+	{
+		SC_CHANGE_HP_PACKET* pk = reinterpret_cast<SC_CHANGE_HP_PACKET*>(buf);
+
+#ifdef NETWORK_DEBUG
+		cout << "SC_CHANGE_HP 수신" << endl;
+#endif
+		break;
+	}
+	case SC_DEAD_OBJECT:
+	{
+		SC_DEAD_OBJECT_PACKET* pk = reinterpret_cast<SC_DEAD_OBJECT_PACKET*>(buf);
+		int id = pk->id;
+		m_players[pk->id]->SetState(AnimationState::Die);
+		m_players[pk->id]->SetDeadEvent([&]() {
+			ExitPlayer(id);
+			});
+#ifdef NETWORK_DEBUG
+		cout << "SC_DEAD_OBJECT 수신" << endl;
 #endif
 		break;
 	}

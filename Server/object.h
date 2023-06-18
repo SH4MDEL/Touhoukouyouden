@@ -4,7 +4,12 @@
 class OBJECT
 {
 public:
-	enum State { FREE, ALLOC, INGAME };
+	enum State { 
+		FREE = 0, 
+		ALLOC = 1,
+		LIVE = 2,
+		DEAD = 4,
+		INGAME = LIVE | DEAD };
 public:
 	OBJECT();
 	virtual ~OBJECT() = default;
@@ -12,7 +17,10 @@ public:
 	virtual void DoRecv() {};
 	virtual void DoSend(void* packet) {};
 
+	bool CanSee(Short2 position);
+
 	virtual void Attacked(UINT attacker) {};
+	virtual void Dead(UINT attacker) {};
 
 public:
 	mutex				m_mutex;
@@ -24,7 +32,6 @@ public:
 	INT					m_exp;
 	INT					m_hp;
 	INT					m_maxHp;
-	INT					m_atk;
 
 	Short2				m_position;
 	char				m_name[NAME_SIZE];

@@ -13,7 +13,7 @@ constexpr int		ID_SIZE = 20;
 constexpr int		PASSWORD_SIZE = 20;
 
 constexpr int		MAX_USER = 20000;
-constexpr int		MAX_MONSTER = 5000;
+constexpr int		MAX_MONSTER = 20000;
 
 constexpr int		W_WIDTH = 2000;
 constexpr int		W_HEIGHT = 2000;
@@ -37,15 +37,19 @@ constexpr char		SC_LOGIN_FAIL = 8;
 constexpr char		SC_STAT_CHANGE = 9;
 constexpr char		SC_SIGNUP_OK = 10;
 constexpr char		SC_SIGNUP_FAIL = 11;
+constexpr char		SC_CHANGE_HP = 12;
+constexpr char		SC_DEAD_OBJECT = 13;
 
 
 // 오브젝트들의 외형을 결정하는 시리얼 넘버이다.
 // 여러 오브젝트들이 같은 시리얼을 가질 수도 있다.
 namespace Serial {
 	namespace Character {
-		constexpr int HAKUREI_REIMU = 1;
-		constexpr int KONPAKU_YOUMU = 2;
-		constexpr int PATCHOULI_KNOWLEDGE = 3;
+		constexpr int START = 1;
+		constexpr int HAKUREI_REIMU = START;
+		constexpr int KONPAKU_YOUMU = START + 1;
+		constexpr int PATCHOULI_KNOWLEDGE = START + 2;
+		constexpr int COUNT = START + 3;
 
 		constexpr int END = 1000;
 	};
@@ -306,6 +310,22 @@ struct SC_SIGNUP_FAIL_PACKET
 {
 	unsigned short size;
 	char type;
+};
+
+struct SC_CHANGE_HP_PACKET
+{
+	unsigned short size;
+	char	type;
+	unsigned int id;
+	int		hp;
+	int		max_hp;
+};
+
+struct SC_DEAD_OBJECT_PACKET
+{
+	unsigned short size;
+	char	type;
+	unsigned int id;
 };
 
 #pragma pack(pop)

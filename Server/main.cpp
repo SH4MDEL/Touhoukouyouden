@@ -154,10 +154,15 @@ void WorkerThread(HANDLE hiocp)
 		{
 			bool activate = false;
 			auto& monster = g_gameServer.GetNPC(key);
+
 			// 몬스터가 AGRO 타입이라면 일단 대상 추격.
 			UINT* targetID = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
 			if (monster->m_moveType == Type::Move::AGRO) {
 				g_gameServer.PathfindingNPC(key, *targetID);
+			}
+			// 공격받은 상태여도 추격
+			else if (monster->m_attacked != -1) {
+				g_gameServer.PathfindingNPC(key, monster->m_attacked);
 			}
 			else if (monster->m_waitType == Type::Wait::ROAMING) {
 				g_gameServer.RoamingNPC(key);
@@ -177,7 +182,7 @@ void WorkerThread(HANDLE hiocp)
 				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 				for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 					if (id < MAX_USER) {
-						if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
+						if (!(g_gameServer.GetClient(id)->m_state & OBJECT::INGAME)) continue;
 						if (!g_gameServer.CanSee(key, id)) continue;
 						activate = true;
 						break;
@@ -192,6 +197,7 @@ void WorkerThread(HANDLE hiocp)
 			}
 			else {
 				monster->m_isActive = false;
+				monster->m_attacked = -1;
 			}
 			delete expOverlapped;
 			break;
@@ -202,11 +208,19 @@ void WorkerThread(HANDLE hiocp)
 			auto npc = g_gameServer.GetNPC(key);
 
 			npc->m_luaLock.lock();
-			lua_getglobal(npc->m_luaState, "event_player_move");
-			lua_pushnumber(npc->m_luaState, *cid);
-			lua_pcall(npc->m_luaState, 1, 0, 0);
+			lua_getglobal(npc->m_monsterState, "event_player_move");
+			lua_pushnumber(npc->m_monsterState, *cid);
+			lua_pcall(npc->m_monsterState, 1, 0, 0);
 			npc->m_luaLock.unlock();
 
+			delete expOverlapped;
+			break;
+		}
+		case TIMER_NPC_RESURRECTION:
+		{
+			auto& monster = g_gameServer.GetNPC(key);
+			monster->m_state = OBJECT::LIVE;
+			// LIVE 상태가 되면 자동적으로 다음 시야 처리시 포함된다.
 			delete expOverlapped;
 			break;
 		}
@@ -229,7 +243,7 @@ void WorkerThread(HANDLE hiocp)
 #endif
 				{
 					unique_lock<mutex> lock(client->m_mutex);
-					client->m_state = OBJECT::INGAME;
+					client->m_state = OBJECT::LIVE;
 				}
 			}
 			{
@@ -265,11 +279,11 @@ void WorkerThread(HANDLE hiocp)
 					{
 						if (id < MAX_USER) {
 							unique_lock<mutex> lock(g_gameServer.GetClient(id)->m_mutex);
-							if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
+							if (!(g_gameServer.GetClient(id)->m_state & OBJECT::INGAME)) continue;
 						}
 						else {
 							unique_lock<mutex> lock(g_gameServer.GetNPC(id)->m_mutex);
-							if (g_gameServer.GetNPC(id)->m_state != OBJECT::INGAME) continue;
+							if (!(g_gameServer.GetNPC(id)->m_state & OBJECT::LIVE)) continue;
 						}
 					}
 					if (!g_gameServer.CanSee(*cid, id)) continue;
@@ -384,10 +398,10 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
 			for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
 				if (id < MAX_USER) {
-					if (g_gameServer.GetClient(id)->m_state != OBJECT::INGAME) continue;
+					if (!(g_gameServer.GetClient(id)->m_state & OBJECT::INGAME)) continue;
 				}
 				else {
-					if (g_gameServer.GetNPC(id)->m_state != OBJECT::INGAME) continue;
+					if (!(g_gameServer.GetNPC(id)->m_state & OBJECT::LIVE)) continue;
 				}
 				if (!g_gameServer.CanSee(cid, id)) continue;
 
@@ -408,7 +422,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			else {
 				// 있다면 이동 시킨다.
 				g_gameServer.GetClient(cid)->m_viewLock.unlock();
-				if (id < MAX_USER) g_gameServer.GetClient(id)->SendObjectInfo(cid);
+				if (id < MAX_USER) g_gameServer.GetClient(id)->SendMoveObject(cid);
 			}
 
 			if (!oldViewList.count(id)) {

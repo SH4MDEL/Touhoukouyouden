@@ -92,8 +92,11 @@ void AnimationObject::Update(float timeElapsed)
 			if (m_state == AnimationState::Attack || m_state == AnimationState::Skill) {
 				SetState(m_prevState);
 			}
-			// 사망 모션은 반복하지 않고 마지막 이미지를 계속 출력한다.
-			else if (m_state == AnimationState::Die) return;
+			// 사망 모션 종료시 DeadEvent 실행
+			else if (m_state == AnimationState::Die) {
+				if (m_deadEvent) m_deadEvent();
+				return;
+			}
 
 			m_animationSet[m_state].m_spriteRect.top = 0;
 			m_animationSet[m_state].m_spriteRect.left = 0;
@@ -151,11 +154,15 @@ void AnimationObject::SetAnimationSet(AnimationState state, const AnimationSet& 
 
 void AnimationObject::SetState(AnimationState state)
 {
-	// 공격 중이거나 스킬 사용중에는 애니메이션을 끊지 않는다.
 	if (m_state != state) {
 		m_state = state;
 		m_animationSet[m_state].m_animationTime = 0.f;
 		m_animationSet[m_state].m_spriteRect.top = 0;
 		m_animationSet[m_state].m_spriteRect.left = 0;
 	}
+}
+
+void AnimationObject::SetDeadEvent(const function<void()>& deadEvent)
+{
+	m_deadEvent = deadEvent;
 }
