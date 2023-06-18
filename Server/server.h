@@ -24,6 +24,7 @@ public:
 	BOOL CanSee(UINT id1, UINT id2);
 	BOOL IsSamePosition(UINT id1, UINT id2);
 	void Move(UINT id, UCHAR direction);
+	void Teleport(UINT id, Short2 position);
 	void Attack(UINT id, UCHAR direction);
 
 	shared_ptr<CLIENT> GetClient(UINT id);

@@ -5,8 +5,20 @@ CLIENT::CLIENT() : OBJECT(), m_socket{0}
 
 CLIENT::~CLIENT() { closesocket(m_socket); }
 
+void CLIENT::AutoHeal()
+{
+	if (m_hp >= m_maxHp) return;
+
+	m_hp += m_maxHp / 10;
+	if (m_hp > m_maxHp) m_hp = m_maxHp;
+	SendStatChange();
+}
+
 void CLIENT::Attacked(UINT attacker)
 {
+	if (m_state != OBJECT::LIVE) {
+		return;
+	}
 	auto damage = g_gameServer.GetNPC(attacker)->GetAttackDamage();
 
 	m_hp -= damage;
@@ -15,21 +27,32 @@ void CLIENT::Attacked(UINT attacker)
 		Dead(attacker);
 		return;
 	}
+	SendStatChange();
 
-	unordered_set<int> playerList;
 	// 시야 내 플레이어에게 체력이 바뀌었음을 알린다.
+	unordered_set<int> playerList;
 	short sectorX = m_position.x / (VIEW_RANGE * 2);
 	short sectorY = m_position.y / (VIEW_RANGE * 2);
-	g_sectorLock[sectorY][sectorX].lock();
-	for (auto& cid : g_sector[sectorY][sectorX]) {
-		if (cid >= MAX_USER) continue;
-		auto& client = g_gameServer.GetClient(cid);
-		if (!(client->m_state & OBJECT::INGAME)) continue;
-		if (CanSee(client->m_position)) {
-			playerList.insert(cid);
+	const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+	// 주변 9개의 섹터 전부 조사
+	for (int i = 0; i < 9; ++i) {
+		if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+			sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+			continue;
 		}
+
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+		for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+			if (id >= MAX_USER) continue;
+			auto& client = g_gameServer.GetClient(id);
+			if (!(client->m_state & OBJECT::INGAME)) continue;
+			if (CanSee(client->m_position)) {
+				playerList.insert(id);
+			}
+		}
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 	}
-	g_sectorLock[sectorY][sectorX].unlock();
 
 	for (auto player : playerList) {
 		SC_CHANGE_HP_PACKET packet;
@@ -49,24 +72,35 @@ void CLIENT::Dead(UINT attacker)
 	m_state = OBJECT::DEAD;
 	m_hp = m_maxHp;
 	m_exp /= 2;
+	SendStatChange();
 
 	Timer::GetInstance().AddTimerEvent(m_id, TimerEvent::RESURRECTION,
-		chrono::system_clock::now() + 5s, 0, -1);
+		chrono::system_clock::now() + 10s, 0, -1);
 
 	// 시야 내 플레이어에게 죽었음을 알린다.
 	unordered_set<int> playerList;
 	short sectorX = m_position.x / (VIEW_RANGE * 2);
 	short sectorY = m_position.y / (VIEW_RANGE * 2);
-	g_sectorLock[sectorY][sectorX].lock();
-	for (auto& cid : g_sector[sectorY][sectorX]) {
-		if (cid >= MAX_USER) continue;
-		auto& client = g_gameServer.GetClient(cid);
-		if (!(client->m_state & OBJECT::INGAME)) continue;
-		if (CanSee(client->m_position)) {
-			playerList.insert(cid);
+	const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+	// 주변 9개의 섹터 전부 조사
+	for (int i = 0; i < 9; ++i) {
+		if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+			sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+			continue;
 		}
+
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+		for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+			if (id >= MAX_USER) continue;
+			auto& client = g_gameServer.GetClient(id);
+			if (!(client->m_state & OBJECT::INGAME)) continue;
+			if (CanSee(client->m_position)) {
+				playerList.insert(id);
+			}
+		}
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 	}
-	g_sectorLock[sectorY][sectorX].unlock();
 
 	for (auto player : playerList) {
 		SC_DEAD_OBJECT_PACKET packet;
@@ -74,6 +108,9 @@ void CLIENT::Dead(UINT attacker)
 		packet.type = SC_DEAD_OBJECT;
 		packet.id = m_id;
 		g_gameServer.GetClient(player)->DoSend(&packet);
+#ifdef NETWORK_DEBUG
+		cout << "SC_DEAD_OBJECT 송신" << endl;
+#endif
 	}
 }
 
@@ -251,7 +288,7 @@ void CLIENT::SendStatChange()
 	DoSend(&packet);
 
 #ifdef NETWORK_DEBUG
-	cout << "SC_STAT_CHANGE 송신 - ID : " << m_id;
+	cout << "SC_STAT_CHANGE 송신 - ID : " << m_id << endl;
 #endif
 }
 

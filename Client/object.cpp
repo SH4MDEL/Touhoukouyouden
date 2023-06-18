@@ -162,6 +162,11 @@ void AnimationObject::SetState(AnimationState state)
 	}
 }
 
+AnimationState AnimationObject::GetState()
+{
+	return m_state;
+}
+
 void AnimationObject::SetDeadEvent(const function<void()>& deadEvent)
 {
 	m_deadEvent = deadEvent;

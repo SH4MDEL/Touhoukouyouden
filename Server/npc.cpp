@@ -52,7 +52,7 @@ void NPC::Dead(UINT attacker)
 	m_attacked = -1;
 
 	Timer::GetInstance().AddTimerEvent(m_id, TimerEvent::RESURRECTION,
-		chrono::system_clock::now() + 5s, 0, -1);
+		chrono::system_clock::now() + 10s, 0, -1);
 
 	// 먼저 나를 죽인 플레이어의 경험치를 올린다.
 	g_gameServer.GetClient(attacker)->ExpUp(m_exp);

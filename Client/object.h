@@ -66,6 +66,7 @@ public:
 
 	void SetAnimationSet(AnimationState state, const AnimationSet& animationSet);
 	void SetState(AnimationState state);
+	AnimationState GetState();
 
 	void SetDeadEvent(const function<void()>& deadEvent);
 

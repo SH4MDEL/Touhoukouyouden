@@ -202,16 +202,118 @@ void WorkerThread(HANDLE hiocp)
 			delete expOverlapped;
 			break;
 		}
+		case TIMER_AUTOHEAL:
+		{
+			if (g_gameServer.GetClient(key)->m_state != OBJECT::INGAME) {
+				delete expOverlapped;
+				break;
+			}
+			g_gameServer.GetClient(key)->AutoHeal();
+			Timer::GetInstance().AddTimerEvent(key, TimerEvent::AUTOHEAL,
+				chrono::system_clock::now() + 5s, 0, -1);
+			delete expOverlapped;
+			break;
+		}
 		case TIMER_NPC_ATTACK:
 		{
-			int* cid = reinterpret_cast<int*>(expOverlapped->m_sendMsg);
 			auto npc = g_gameServer.GetNPC(key);
+			if (npc->m_state != OBJECT::LIVE || npc->m_isActive == false) {
+				delete expOverlapped;
+				break;
+			}
+			auto position = npc->m_position;
+			unordered_set<int> playerList;
+			// 자신의 위치에 플레이어가 있는지 확인한다.
+			short sectorX = position.x / (VIEW_RANGE * 2);
+			short sectorY = position.y / (VIEW_RANGE * 2);
+			g_sectorLock[sectorY][sectorX].lock();
+			for (auto& cid : g_sector[sectorY][sectorX]) {
+				if (cid >= MAX_USER) continue;
+				auto& client = g_gameServer.GetClient(cid);
+				if (!(client->m_state & OBJECT::INGAME)) continue;
+				if (position == client->m_position) {
+					playerList.insert(cid);
+				}
+			}
+			g_sectorLock[sectorY][sectorX].unlock();
 
-			npc->m_luaLock.lock();
-			lua_getglobal(npc->m_monsterState, "event_player_move");
-			lua_pushnumber(npc->m_monsterState, *cid);
-			lua_pcall(npc->m_monsterState, 1, 0, 0);
-			npc->m_luaLock.unlock();
+			for (auto player : playerList) {
+				g_gameServer.GetClient(player)->Attacked(key);
+			}
+
+			Timer::GetInstance().AddTimerEvent(key, TimerEvent::ATTACK,
+				chrono::system_clock::now() + 1s, 0, -1);
+
+			delete expOverlapped;
+			break;
+		}
+		case TIMER_CLIENT_RESURRECTION:
+		{
+			auto& client = g_gameServer.GetClient(key);
+			client->m_state = OBJECT::LIVE;
+
+			g_gameServer.Teleport(key, Short2{1000, 1000});
+
+			// 섹터 안에 있는 오브젝트의 ID를 담음.
+			unordered_set<int> newViewList;
+			client->m_viewLock.lock();
+			auto oldViewList = client->m_viewList;
+			client->m_viewLock.unlock();
+
+			short sectorX = client->m_position.x / (VIEW_RANGE * 2);
+			short sectorY = client->m_position.y / (VIEW_RANGE * 2);
+			const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+			const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+			// 주변 9개의 섹터 전부 조사
+			for (int i = 0; i < 9; ++i) {
+				if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+					sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+					continue;
+				}
+
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+				for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+					if (id < MAX_USER) {
+						if (!(g_gameServer.GetClient(id)->m_state & OBJECT::INGAME)) continue;
+					}
+					else {
+						if (!(g_gameServer.GetNPC(id)->m_state & OBJECT::LIVE)) continue;
+					}
+					if (!g_gameServer.CanSee(key, id)) continue;
+
+					newViewList.insert(id);
+				}
+				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+			}
+
+			// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
+			for (auto& id : newViewList) {
+				client->m_viewLock.lock();
+				if (!client->m_viewList.count(id)) {
+					// View List에 없다면 더해준다.
+					client->m_viewLock.unlock();
+					client->SendAddPlayer(id);
+					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(key);
+				}
+				else {
+					// 있다면 이동 시킨다.
+					client->m_viewLock.unlock();
+					if (id < MAX_USER) g_gameServer.GetClient(id)->SendMoveObject(key);
+				}
+
+				if (!oldViewList.count(id)) {
+					client->SendAddPlayer(id);
+					if (id >= MAX_USER) g_gameServer.WakeupNPC(id, key);
+				}
+			}
+
+			// 새 View List에 제거되었는데 이전에 있던 플레이어의 정보 삭제
+			for (auto& id : oldViewList) {
+				if (!newViewList.count(id)) {
+					client->SendExitPlayer(id);
+					if (id < MAX_USER) g_gameServer.GetClient(id)->SendExitPlayer(key);
+				}
+			}
 
 			delete expOverlapped;
 			break;
@@ -220,6 +322,10 @@ void WorkerThread(HANDLE hiocp)
 		{
 			auto& monster = g_gameServer.GetNPC(key);
 			monster->m_state = OBJECT::LIVE;
+
+			Timer::GetInstance().AddTimerEvent(key, TimerEvent::ATTACK,
+				chrono::system_clock::now() + 1s, 0, -1);
+
 			// LIVE 상태가 되면 자동적으로 다음 시야 처리시 포함된다.
 			delete expOverlapped;
 			break;
@@ -292,7 +398,7 @@ void WorkerThread(HANDLE hiocp)
 					client->SendAddPlayer(id);
 					// 상대는 NPC가 아닐 경우 전송
 					if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(*cid);
-					else if (g_gameServer.IsSamePosition(id, *cid)) g_gameServer.WakeupNPC(id, *cid);
+					else if (g_gameServer.CanSee(id, *cid)) g_gameServer.WakeupNPC(id, *cid);
 				}
 				g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 			}
@@ -376,16 +482,17 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 #endif
 
 		g_gameServer.Move(cid, (*pk).direction);
-		g_gameServer.GetClient(cid)->m_lastMoveTime = pk->moveTime;
+		auto& client = g_gameServer.GetClient(cid);
+		client->m_lastMoveTime = pk->moveTime;
 		
 		// 섹터 안에 있는 오브젝트의 ID를 담음.
 		unordered_set<int> newViewList;
-		g_gameServer.GetClient(cid)->m_viewLock.lock();
-		auto oldViewList = g_gameServer.GetClient(cid)->m_viewList;
-		g_gameServer.GetClient(cid)->m_viewLock.unlock();
+		client->m_viewLock.lock();
+		auto oldViewList = client->m_viewList;
+		client->m_viewLock.unlock();
 
-		short sectorX = g_gameServer.GetClient(cid)->m_position.x / (VIEW_RANGE * 2);
-		short sectorY = g_gameServer.GetClient(cid)->m_position.y / (VIEW_RANGE * 2);
+		short sectorX = client->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = client->m_position.y / (VIEW_RANGE * 2);
 		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 		// 주변 9개의 섹터 전부 조사
@@ -412,21 +519,21 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 		// 새 View List에 추가되었는데 이전에 없던 플레이어의 정보 추가
 		for (auto& id : newViewList) {
-			g_gameServer.GetClient(cid)->m_viewLock.lock();
-			if (!g_gameServer.GetClient(cid)->m_viewList.count(id)) {
+			client->m_viewLock.lock();
+			if (!client->m_viewList.count(id)) {
 				// View List에 없다면 더해준다.
-				g_gameServer.GetClient(cid)->m_viewLock.unlock();
-				g_gameServer.GetClient(cid)->SendAddPlayer(id);
+				client->m_viewLock.unlock();
+				client->SendAddPlayer(id);
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
 			}
 			else {
 				// 있다면 이동 시킨다.
-				g_gameServer.GetClient(cid)->m_viewLock.unlock();
+				client->m_viewLock.unlock();
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendMoveObject(cid);
 			}
 
 			if (!oldViewList.count(id)) {
-				g_gameServer.GetClient(cid)->SendAddPlayer(id);
+				client->SendAddPlayer(id);
 				if (id >= MAX_USER) g_gameServer.WakeupNPC(id, cid);
 			}
 		}
@@ -434,19 +541,8 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		// 새 View List에 제거되었는데 이전에 있던 플레이어의 정보 삭제
 		for (auto& id : oldViewList) {
 			if (!newViewList.count(id)) {
-				g_gameServer.GetClient(cid)->SendExitPlayer(id);
+				client->SendExitPlayer(id);
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendExitPlayer(cid);
-			}
-		}
-
-		// 이동한 자리에 NPC가 있는지 검사
-		// 있을 경우 피격 데미지 부여
-		g_gameServer.GetClient(cid)->m_viewLock.lock();
-		auto npcCheckingViewList = g_gameServer.GetClient(cid)->m_viewList;
-		g_gameServer.GetClient(cid)->m_viewLock.unlock();
-		for (auto& id : npcCheckingViewList) {
-			if (id >= MAX_USER && g_gameServer.IsSamePosition(id, cid)) {
-				g_gameServer.WakeupNPC(id, cid);
 			}
 		}
 

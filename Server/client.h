@@ -10,6 +10,7 @@ public:
 	CLIENT();
 	~CLIENT() override;
 
+	void AutoHeal();
 	void Attacked(UINT attacker) override;
 	void Dead(UINT attacker) override;
 	void ExpUp(INT exp);

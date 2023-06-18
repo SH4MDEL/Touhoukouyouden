@@ -239,6 +239,7 @@ void MainScene::ExitPlayer(int id)
 void MainScene::Move(INT id, sf::Vector2f position)
 {
 	if (id == g_clientID) {
+		if (m_avatar->GetState() == AnimationState::Die) m_avatar->SetState(AnimationState::Idle);
 		m_avatar->SetPosition(position);
 		g_leftX = position.x - 7; g_topY = position.y - 7;
 	}
@@ -379,6 +380,7 @@ void MainScene::ProcessPacket(char* buf)
 	case SC_LOGIN_INFO:
 	{
 		SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
+		g_clientID = pk->id;
 		string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
 		m_hpUI->SetText(hp.c_str());
 		string level = "Level : " + to_string(pk->level);
@@ -455,10 +457,16 @@ void MainScene::ProcessPacket(char* buf)
 	{
 		SC_DEAD_OBJECT_PACKET* pk = reinterpret_cast<SC_DEAD_OBJECT_PACKET*>(buf);
 		int id = pk->id;
-		m_players[pk->id]->SetState(AnimationState::Die);
-		m_players[pk->id]->SetDeadEvent([&]() {
-			ExitPlayer(id);
-			});
+		if (id == g_clientID) m_avatar->SetState(AnimationState::Die);
+		else {
+			m_players[id]->SetState(AnimationState::Die);
+			if (id >= MAX_USER) {
+				m_players[id]->SetDeadEvent([&]() {
+					ExitPlayer(id);
+					});
+			}
+
+		}
 #ifdef NETWORK_DEBUG
 		cout << "SC_DEAD_OBJECT ¼ö½Å" << endl;
 #endif

@@ -213,6 +213,39 @@ void GameServer::Move(UINT id, UCHAR direction)
 	}
 }
 
+void GameServer::Teleport(UINT id, Short2 position)
+{
+	Short2 from = GetPlayerPosition(id);
+	Short2 to = position;
+	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
+		return;
+	}
+	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
+	m_objects[id]->m_position = to;
+
+	// 만약 섹터의 위치가 바뀌었을 경우
+	if ((from.x / (VIEW_RANGE * 2) != to.x / (VIEW_RANGE * 2)) ||
+		(from.y / (VIEW_RANGE * 2) != to.y / (VIEW_RANGE * 2))) {
+		// 데드락을 방지하기 위해 락을 거는 순서를 정한다.
+		priority_queue<Short2> pq;
+		pq.push(from); pq.push(to);
+		while (!pq.empty()) {
+			auto index = pq.top(); pq.pop();
+			g_sectorLock[index.y / (VIEW_RANGE * 2)][index.x / (VIEW_RANGE * 2)].lock();
+		}
+		// 이전 섹터에서 오브젝트의 ID를 삭제한다.
+		g_sector[from.y / (VIEW_RANGE * 2)][from.x / (VIEW_RANGE * 2)].erase(id);
+		// 새로운 섹터에 오브젝트의 ID를 삽입한다.
+		g_sector[to.y / (VIEW_RANGE * 2)][to.x / (VIEW_RANGE * 2)].insert(id);
+
+		pq.push(from); pq.push(to);
+		while (!pq.empty()) {
+			auto index = pq.top(); pq.pop();
+			g_sectorLock[index.y / (VIEW_RANGE * 2)][index.x / (VIEW_RANGE * 2)].unlock();
+		}
+	}
+}
+
 void GameServer::Attack(UINT id, UCHAR direction)
 {
 	Short2 from = GetPlayerPosition(id);
@@ -266,6 +299,9 @@ void GameServer::WakeupNPC(UINT id, UINT waker)
 
 	Timer::GetInstance().AddTimerEvent(id, TimerEvent::MOVE, 
 		chrono::system_clock::now() + monster->m_speed, 0, waker);
+
+	Timer::GetInstance().AddTimerEvent(id, TimerEvent::ATTACK,
+		chrono::system_clock::now() + 1s, 0, -1);
 }
 
 void GameServer::SleepNPC(UINT id)
@@ -398,6 +434,7 @@ void GameServer::PathfindingNPC(UINT id, UINT target)
 {
 	auto& monster = g_gameServer.GetNPC(id);
 	if (!(monster->m_state & OBJECT::LIVE)) return;
+	if (!(g_gameServer.GetClient(target)->m_state & OBJECT::LIVE)) return;
 	auto& targetPosition = g_gameServer.GetClient(target)->m_position;
 	if (monster->m_position == targetPosition) return;
 
