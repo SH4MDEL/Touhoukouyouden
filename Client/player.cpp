@@ -47,7 +47,7 @@ void Player::OnProcessingKeyboardMessage(float timeElapsed)
 		m_state == AnimationState::Skill ||
 		m_state == AnimationState::Die) return;
 
-	if (GetAsyncKeyState(VK_CONTROL)) {
+	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 		SetState(AnimationState::Attack);
 		CS_ATTACK_PACKET packet;
 		packet.size = sizeof(CS_ATTACK_PACKET);

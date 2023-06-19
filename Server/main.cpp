@@ -632,6 +632,15 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 
 		break;
 	}
+	case CS_CHAT:
+	{
+		CS_CHAT_PACKET* pk = reinterpret_cast<CS_CHAT_PACKET*>(packetBuf);
+#ifdef NETWORK_DEBUG
+		cout << "CS_CHAT ¼ö½Å" << endl;
+#endif
+		g_gameServer.GetClient(cid)->SendChat(pk->mess);
+		break;
+	}
 	case CS_ATTACK:
 	{
 		CS_ATTACK_PACKET* pk = reinterpret_cast<CS_ATTACK_PACKET*>(packetBuf);

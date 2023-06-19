@@ -595,7 +595,7 @@ int GameServer::Lua_SendMessage(lua_State* state)
 	lua_pop(state, 4);
 
 	auto client = static_pointer_cast<CLIENT>(m_objects[user]);
-	client->SendChat(npc, message);
+	client->SendChat(message);
 	return 0;
 }
 

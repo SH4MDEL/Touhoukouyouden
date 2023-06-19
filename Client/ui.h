@@ -59,6 +59,8 @@ public:
 
 	virtual void SetClickEvent(function<void()> clickEvent);
 
+	void SetType(Type type);
+
 protected:
 	Type				m_type;	// is Selected?
 	function<void()>	m_clickEvent;

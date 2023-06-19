@@ -37,18 +37,26 @@ private:
 	virtual void BuildObjects() final;
 	virtual void DestroyObject() final;
 
+	void SetMessage(const char* message);
+
 private:
 	array<array<int, W_WIDTH>, W_HEIGHT> m_map;
 
-	shared_ptr<UIObject>	m_levelUI;
-	shared_ptr<UIObject>	m_hpUI;
-	shared_ptr<UIObject>	m_expUI;
+	shared_ptr<UIObject>			m_levelUI;
+	shared_ptr<UIObject>			m_hpUI;
+	shared_ptr<UIObject>			m_expUI;
+	array<shared_ptr<UIObject>, 20>	m_message;
+	shared_ptr<InputTextBoxUI>		m_messageBox;
 
-	shared_ptr<Object>	m_block;
-	shared_ptr<Object>	m_nonblock;
-	shared_ptr<Object>	m_henesysBlock;
-	shared_ptr<Object>	m_henesysNonblock;
+	shared_ptr<Object>				m_block;
+	shared_ptr<Object>				m_nonblock;
+	shared_ptr<Object>				m_henesysBlock;
+	shared_ptr<Object>				m_henesysNonblock;
 
 	shared_ptr<Player>	m_avatar;
 	unordered_map<INT, shared_ptr<Player>> m_players;
+
+	bool m_inputState;
+	const float m_chatCoolTime = 1.f;
+	float m_chatTime;
 };

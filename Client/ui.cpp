@@ -158,6 +158,11 @@ void ButtonUIObject::SetClickEvent(function<void()> clickEvent)
 	m_clickEvent = clickEvent;
 }
 
+void ButtonUIObject::SetType(Type type)
+{
+	m_type = type;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 InputTextBoxUI::InputTextBoxUI(sf::Vector2f position, sf::Vector2f size, INT limit) : 

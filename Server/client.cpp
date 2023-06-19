@@ -232,28 +232,46 @@ void CLIENT::SendMoveObject(INT id)
 #endif
 }
 
-void CLIENT::SendChat(INT id, const char* message)
+void CLIENT::SendChat(const char* message)
 {
-	m_viewLock.lock();
-	if (!m_viewList.count(id)) {
-		// 시야에 해당 오브젝트가 존재하지 않는다면
-		m_viewLock.unlock();
-		// 그 오브젝트를 먼저 추가해준다.
-		SendAddPlayer(id);
-		return;
+	// 시야 내 플레이어에게 채팅 전송
+	unordered_set<int> playerList;
+	short sectorX = m_position.x / (VIEW_RANGE * 2);
+	short sectorY = m_position.y / (VIEW_RANGE * 2);
+	const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+	// 주변 9개의 섹터 전부 조사
+	for (int i = 0; i < 9; ++i) {
+		if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+			sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+			continue;
+		}
+
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+		for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+			if (id >= MAX_USER) continue;
+			auto& client = g_gameServer.GetClient(id);
+			if (!(client->m_state & OBJECT::INGAME)) continue;
+			if (CanSee(client->m_position)) {
+				playerList.insert(id);
+			}
+		}
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
 	}
-	m_viewLock.unlock();
 
+	string sendstr = message;
 	SC_CHAT_PACKET packet;
-	packet.size = sizeof(SC_MOVE_OBJECT_PACKET);
+	packet.size = sizeof(PACKET) + sizeof(packet.id) + sendstr.size() + 1;
 	packet.type = SC_CHAT;
-	packet.id = id;
-	strcpy_s(packet.message, message);
-	DoSend(&packet);
+	packet.id = m_id;
+	strcpy_s(packet.message, sendstr.c_str());
 
+	for (auto player : playerList) {
+		g_gameServer.GetClient(player)->DoSend(&packet);
 #ifdef NETWORK_DEBUG
-	cout << "SC_CHAT 송신 - ID : " << m_id;
+		cout << "SC_CHAT 송신 - ID : " << m_id;
 #endif
+	}
 }
 
 void CLIENT::SendExitPlayer(INT id)

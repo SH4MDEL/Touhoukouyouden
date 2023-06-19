@@ -1,6 +1,6 @@
 #include "mainScene.h"
 
-MainScene::MainScene()
+MainScene::MainScene() : m_inputState {false}, m_chatTime{0.f}
 {
 	BuildObjects();
 }
@@ -21,22 +21,40 @@ void MainScene::BuildObjects()
 	}
 
 	m_hpUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
-	m_hpUI->SetPosition(sf::Vector2f{ 1200.f, 100.f });
+	m_hpUI->SetPosition(sf::Vector2f{ 1230.f, 100.f });
 	m_hpUI->SetText("");
 	m_hpUI->SetTextFont(g_font);
 	m_hpUI->SetTextColor(sf::Color(255, 255, 255));
 
 	m_levelUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
-	m_levelUI->SetPosition(sf::Vector2f{ 1200.f, 150.f });
+	m_levelUI->SetPosition(sf::Vector2f{ 1230.f, 150.f });
 	m_levelUI->SetText("");
 	m_levelUI->SetTextFont(g_font);
 	m_levelUI->SetTextColor(sf::Color(255, 255, 255));
 
 	m_expUI = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
-	m_expUI->SetPosition(sf::Vector2f{ 1200.f, 200.f });
+	m_expUI->SetPosition(sf::Vector2f{ 1230.f, 200.f });
 	m_expUI->SetText("");
 	m_expUI->SetTextFont(g_font);
 	m_expUI->SetTextColor(sf::Color(255, 255, 255));
+
+	for (int i = 0; auto & message : m_message) {
+		message = make_shared<UIObject>(sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 1.f, 1.f });
+		message->SetPosition(sf::Vector2f{ 1230.f, 800 - (float)i++ * 20.f});
+		message->SetTextSize(15);
+		message->SetText("");
+		message->SetTextFont(g_font);
+		message->SetTextColor(sf::Color(255, 255, 255));
+	}
+
+	auto textbarTexture = make_shared<sf::Texture>();
+	textbarTexture->loadFromFile("Resource\\UI\\InputTextBar.png");
+	g_textures.insert({ "TEXTBARTEXTURE", textbarTexture });
+
+	m_messageBox = make_shared<InputTextBoxUI>(sf::Vector2f{ 1060.f, 850.f }, sf::Vector2f{ 1.f, 1.f }, 20);
+	m_messageBox->SetSpriteTexture(g_textures["TEXTBARTEXTURE"], 0, 0, 361, 60);
+	m_messageBox->SetTextFont(g_font);
+	m_messageBox->SetTextColor(sf::Color(255, 255, 255));
 
 	auto mapTexture = make_shared<sf::Texture>();
 	mapTexture->loadFromFile("Resource\\Chessboard.png");
@@ -151,11 +169,25 @@ void MainScene::DestroyObject()
 	m_players.clear();
 }
 
+void MainScene::SetMessage(const char* message)
+{
+	for (int i = 19; i > 0; --i) {
+		m_message[i]->SetText(m_message[i - 1]->GetString().c_str());
+	}
+	m_message[0]->SetText(message);
+}
+
 void MainScene::Update(float timeElapsed)
 {
 	Recv();
 	if (m_avatar) m_avatar->Update(timeElapsed);
 	for (auto& player : m_players) player.second->Update(timeElapsed);
+
+	m_messageBox->Update(timeElapsed);
+
+	if (m_chatTime > 0) {
+		m_chatTime -= timeElapsed;
+	}
 }
 
 void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
@@ -199,15 +231,51 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 	if (m_hpUI) m_hpUI->Render(window);
 	if (m_levelUI) m_levelUI->Render(window);
 	if (m_expUI) m_expUI->Render(window);
+
+	for (auto & message : m_message) {
+		message->Render(window);
+	}
+	if (m_messageBox) m_messageBox->Render(window);
 }
 
 void MainScene::OnProcessingKeyboardMessage(float timeElapsed)
 {
-	if (m_avatar) m_avatar->OnProcessingKeyboardMessage(timeElapsed);
+	if (GetAsyncKeyState(VK_RETURN) & 0x8000) {
+		if (m_inputState) {
+			m_inputState = false;
+			m_messageBox->SetType(ButtonUIObject::Type::NOACTIVE);
+			if (m_messageBox->GetString().size() && m_chatTime <= 0.f) {
+				m_chatTime = m_chatCoolTime;
+				CS_CHAT_PACKET packet;
+				packet.size = sizeof(PACKET) + m_messageBox->GetString().size() + 1;
+				packet.type = CS_CHAT;
+				strcpy_s(packet.mess, m_messageBox->GetString().c_str());
+				Send(&packet);
+#ifdef NETWORK_DEBUG
+				cout << "CS_CHAT 송신" << endl;
+#endif
+			}
+		}
+		else {
+			m_inputState = true;
+			m_messageBox->SetType(ButtonUIObject::Type::ACTIVE);
+		}
+	}
+	if (!m_inputState) {
+		if (m_avatar) m_avatar->OnProcessingKeyboardMessage(timeElapsed);
+	}
 }
 
 void MainScene::OnProcessingInputTextMessage(sf::Event inputEvent)
 {
+	switch (inputEvent.type)
+	{
+	case sf::Event::TextEntered:
+	{
+		if (m_inputState) m_messageBox->OnProcessingKeyboardMessage(inputEvent);
+		break;
+	}
+	}
 }
 
 void MainScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window)
@@ -421,7 +489,8 @@ void MainScene::MoveObjectProcess(char* buf)
 void MainScene::ChatProcess(char* buf)
 {
 	SC_CHAT_PACKET* pk = reinterpret_cast<SC_CHAT_PACKET*>(buf);
-	SetChat(pk->id, pk->message);
+	string message = to_string(pk->id) + " : " + pk->message;
+	SetMessage(message.c_str());
 #ifdef NETWORK_DEBUG
 	cout << "SC_CHAT 수신" << endl;
 #endif
@@ -444,7 +513,8 @@ void MainScene::StatChangeProcess(char* buf)
 void MainScene::ChangeHpProcess(char* buf)
 {
 	SC_CHANGE_HP_PACKET* pk = reinterpret_cast<SC_CHANGE_HP_PACKET*>(buf);
-
+	string message = "ID : " + to_string(pk->id) + " HP is " + to_string(pk->hp);
+	SetMessage(message.c_str());
 #ifdef NETWORK_DEBUG
 	cout << "SC_CHANGE_HP 수신" << endl;
 #endif
@@ -464,6 +534,8 @@ void MainScene::DeadObjectProcess(char* buf)
 		}
 
 	}
+	string message = "ID : " + to_string(pk->id) + " is Dead ";
+	SetMessage(message.c_str());
 #ifdef NETWORK_DEBUG
 	cout << "SC_DEAD_OBJECT 수신" << endl;
 #endif

@@ -21,7 +21,7 @@ public:
 	void SendLoginConfirm();
 	void SendAddPlayer(INT id);
 	void SendMoveObject(INT id);
-	void SendChat(INT id, const char* message);
+	void SendChat(const char* message);
 	void SendExitPlayer(INT id);
 	void SendStatChange();
 
