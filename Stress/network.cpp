@@ -187,6 +187,7 @@ void ProcessPacket(int ci, unsigned char packet[])
 	case SC_SIGNUP_FAIL: break;
 	case SC_CHANGE_HP: break;
 	case SC_DEAD_OBJECT: break;
+	case SC_ADD_EFFECT: break;
 	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
 		while (true);
 	}

@@ -506,7 +506,6 @@ void GameServer::PathfindingNPC(UINT id, UINT target)
 
 	if (result == -1) {
 		// 이동 실패 처리
-		cout << "이동 불가능" << endl;
 		return;
 	}
 
