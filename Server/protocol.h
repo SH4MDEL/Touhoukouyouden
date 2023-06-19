@@ -13,7 +13,7 @@ constexpr int		ID_SIZE = 20;
 constexpr int		PASSWORD_SIZE = 20;
 
 constexpr int		MAX_USER = 20000;
-constexpr int		MAX_MONSTER = 2000;
+constexpr int		MAX_MONSTER = 200000;
 
 constexpr int		W_WIDTH = 2000;
 constexpr int		W_HEIGHT = 2000;
@@ -27,6 +27,7 @@ constexpr char		CS_TELEPORT = 4; // RANDOM한 위치로 Teleport, Stress Test할 때 H
 constexpr char		CS_LOGOUT = 5;
 constexpr char		CS_SIGNUP = 6;
 constexpr char		CS_STRESS_LOGIN = 7;
+constexpr char		CS_SKILL = 8;
 
 constexpr char		SC_LOGIN_INFO = 2;
 constexpr char		SC_ADD_OBJECT = 3;
@@ -40,6 +41,7 @@ constexpr char		SC_SIGNUP_OK = 10;
 constexpr char		SC_SIGNUP_FAIL = 11;
 constexpr char		SC_CHANGE_HP = 12;
 constexpr char		SC_DEAD_OBJECT = 13;
+constexpr char		SC_ADD_EFFECT = 14;
 
 
 // 오브젝트들의 외형을 결정하는 시리얼 넘버이다.
@@ -72,6 +74,11 @@ namespace Serial {
 
 		constexpr int END = NPC::END + 1000;
 	};
+
+	namespace Effect {
+		constexpr int REIMU_SKILL = Monster::END;
+		constexpr int PATCHOULI_SKILL = REIMU_SKILL + 1;
+	}
 }
 
 namespace Type
@@ -87,12 +94,43 @@ namespace Type
 	}
 }
 
+namespace SkillSetting
+{
+	namespace REIMU {
+		constexpr int OFFSET = 2;
+		constexpr int RANGE = 2;
+		constexpr int COOLTIME = 5;
+	}
+	namespace PATCHOULI {
+		constexpr int OFFSET = 4;
+		constexpr int RANGE = 4;
+		constexpr int COOLTIME = 7;
+	}
+}
+
+namespace StatusSetting
+{
+	namespace REIMU {
+		constexpr int SKILL_COOLTIME = 5;
+		constexpr float MOVE_SPEED = 0.15f;
+	}
+	namespace YOUMU {
+		constexpr int SKILL_COOLTIME = 0;
+		constexpr float MOVE_SPEED = 0.11f;
+	}
+	namespace PATCHOULI {
+		constexpr int SKILL_COOLTIME = 7;
+		constexpr float MOVE_SPEED = 0.19f;
+	}
+}
+
 enum AnimationState {
 	Idle,
 	Walk,
 	Attack,
 	Skill,
 	Die,
+	Effect,
 	Count
 };
 
@@ -233,6 +271,12 @@ struct CS_STRESS_LOGIN_PACKET
 	char name[ID_SIZE];
 };
 
+struct CS_SKILL_PACKET {
+	unsigned short size;
+	char	type;
+	unsigned char direction;
+};
+
 /*
  *  Server to Client
  */
@@ -334,6 +378,14 @@ struct SC_DEAD_OBJECT_PACKET
 	unsigned short size;
 	char	type;
 	unsigned int id;
+};
+
+struct SC_ADD_EFFECT_PACKET
+{
+	unsigned short size;
+	char	type;
+	unsigned int serial;
+	Short2 coord;
 };
 
 #pragma pack(pop)

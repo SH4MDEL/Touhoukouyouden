@@ -15,6 +15,8 @@ public:
 
 	virtual void SetName(const char* name);
 	void SetChat(const char* name);
+	void SetSerial(const int serial);
+
 private:
 	sf::Text		m_name;
 	sf::Text		m_chat;
@@ -22,8 +24,12 @@ private:
 	const float		m_chatLifeTime = 2.f;
 	FLOAT			m_chatTime;
 
-	const float		m_moveTime = 0.15f;
+	float			m_moveTime = 0.15f;
 	float			m_pressedMoveKey;
+
+	float			m_skillCoolTime;
+	float			m_skillTime;
+
 	unsigned char	m_direction;
 };
 

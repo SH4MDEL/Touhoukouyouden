@@ -32,6 +32,7 @@ public:
 	void StatChangeProcess(char* buf);
 	void ChangeHpProcess(char* buf);
 	void DeadObjectProcess(char* buf);
+	void AddEffectProcess(char* buf);
 
 private:
 	virtual void BuildObjects() final;
@@ -55,6 +56,7 @@ private:
 
 	shared_ptr<Player>	m_avatar;
 	unordered_map<INT, shared_ptr<Player>> m_players;
+	vector<shared_ptr<EffectObject>> m_effects;
 
 	bool m_inputState;
 	const float m_chatCoolTime = 1.f;

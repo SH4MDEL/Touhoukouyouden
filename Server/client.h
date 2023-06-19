@@ -24,6 +24,7 @@ public:
 	void SendChat(const char* message);
 	void SendExitPlayer(INT id);
 	void SendStatChange();
+	void SendAddEffect(Short2 position);
 
 	int GetAttackDamage();
 	int GetSkillDamage();

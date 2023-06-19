@@ -121,5 +121,10 @@ void Scene::ProcessPacket(char* buf)
         static_cast<MainScene*>(g_gameFramework.GetScene())->DeadObjectProcess(buf);
 		break;
 	}
+    case SC_ADD_EFFECT:
+    {
+        static_cast<MainScene*>(g_gameFramework.GetScene())->AddEffectProcess(buf);
+        break;
+    }
     }
 }

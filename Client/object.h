@@ -78,3 +78,17 @@ protected:
 
 	function<void()>		m_deadEvent;
 };
+
+class EffectObject : public AnimationObject
+{
+public:
+	EffectObject(sf::Vector2f position, sf::Vector2f size);
+	virtual ~EffectObject() override;
+
+	virtual void Update(float timeElapsed) override;
+
+	bool IsFinish() { return m_finish; }
+
+private:
+	bool m_finish;
+};

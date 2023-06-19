@@ -8,6 +8,7 @@ public:
 	~NPC() override = default;
 
 	void Attacked(UINT attacker) override;
+	void Skilled(UINT attacker);
 	void Dead(UINT attacker) override;
 
 	int GetAttackDamage();

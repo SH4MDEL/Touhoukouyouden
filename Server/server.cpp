@@ -280,6 +280,60 @@ void GameServer::Attack(UINT id, UCHAR direction)
 	}
 }
 
+void GameServer::Skill(UINT id, UCHAR direction)
+{
+	Short2 from = GetPlayerPosition(id);
+	auto x = Move::dx[direction];
+	auto y = Move::dy[direction];
+
+	int range = 0;
+	if (m_objects[id]->m_serial == Serial::Character::HAKUREI_REIMU) {
+		x *= SkillSetting::REIMU::OFFSET;
+		y *= SkillSetting::REIMU::OFFSET;
+		range = SkillSetting::REIMU::RANGE;
+	}
+	else if (m_objects[id]->m_serial == Serial::Character::PATCHOULI_KNOWLEDGE) {
+		x *= SkillSetting::PATCHOULI::OFFSET;
+		y *= SkillSetting::PATCHOULI::OFFSET;
+		range = SkillSetting::PATCHOULI::RANGE;
+	}
+	else {
+		return;
+	}
+	Short2 to = { from.x + (SHORT)x , from.y + (SHORT)y };
+
+	static_pointer_cast<CLIENT>(m_objects[id])->SendAddEffect(to);
+
+	unordered_set<int> monsterList;
+	short sectorX = to.x / (VIEW_RANGE * 2);
+	short sectorY = to.y / (VIEW_RANGE * 2);
+	const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+	// 주변 9개의 섹터 전부 조사
+	for (int i = 0; i < 9; ++i) {
+		if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+			sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+			continue;
+		}
+
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+		for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+			if (id < MAX_USER) continue;
+			auto& monster = g_gameServer.GetNPC(id);
+			if (!(monster->m_state & OBJECT::LIVE)) continue;
+			if (monster->m_position.x >= to.x - range && monster->m_position.x <= to.x + range &&
+				monster->m_position.y >= to.y - range && monster->m_position.y <= to.y + range) {
+				monsterList.insert(id);
+			}
+		}
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+	}
+
+	for (auto monster : monsterList) {
+		static_pointer_cast<NPC>(m_objects[monster])->Skilled(id);
+	}
+}
+
 shared_ptr<CLIENT> GameServer::GetClient(UINT id)
 {
 	return static_pointer_cast<CLIENT>(m_objects[id]);

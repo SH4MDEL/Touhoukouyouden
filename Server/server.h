@@ -26,6 +26,7 @@ public:
 	void Move(UINT id, UCHAR direction);
 	void Teleport(UINT id, Short2 position);
 	void Attack(UINT id, UCHAR direction);
+	void Skill(UINT id, UCHAR direction);
 
 	shared_ptr<CLIENT> GetClient(UINT id);
 	shared_ptr<NPC> GetNPC(UINT id);

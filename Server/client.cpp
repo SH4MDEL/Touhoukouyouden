@@ -314,6 +314,51 @@ void CLIENT::SendStatChange()
 #endif
 }
 
+void CLIENT::SendAddEffect(Short2 position)
+{
+	// 시야 내 플레이어에게 효과 전송
+	unordered_set<int> playerList;
+	short sectorX = m_position.x / (VIEW_RANGE * 2);
+	short sectorY = m_position.y / (VIEW_RANGE * 2);
+	const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+	const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+	// 주변 9개의 섹터 전부 조사
+	for (int i = 0; i < 9; ++i) {
+		if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+			sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+			continue;
+		}
+
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+		for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+			if (id >= MAX_USER) continue;
+			auto& client = g_gameServer.GetClient(id);
+			if (!(client->m_state & OBJECT::INGAME)) continue;
+			if (CanSee(client->m_position)) {
+				playerList.insert(id);
+			}
+		}
+		g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+	}
+
+	SC_ADD_EFFECT_PACKET packet;
+	packet.size = sizeof(SC_ADD_EFFECT_PACKET);
+	packet.type = SC_ADD_EFFECT;
+	if (m_serial == Serial::Character::HAKUREI_REIMU) {
+		packet.serial = Serial::Effect::REIMU_SKILL;
+	}
+	if (m_serial == Serial::Character::PATCHOULI_KNOWLEDGE) {
+		packet.serial = Serial::Effect::PATCHOULI_SKILL;
+	}
+	packet.coord = position;
+	for (auto player : playerList) {
+		g_gameServer.GetClient(player)->DoSend(&packet);
+#ifdef NETWORK_DEBUG
+		cout << "SC_ADD_EFFECT 송신 - ID : " << m_id;
+#endif
+	}
+}
+
 int CLIENT::GetAttackDamage()
 {
 	return m_baseAtk + m_bonusAtk * m_level;

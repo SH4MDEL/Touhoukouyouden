@@ -150,6 +150,14 @@ void MainScene::BuildObjects()
 	g_textures.insert({ "RIBBONPIG_WALK", ribbonpigWalkTexture });
 	g_textures.insert({ "RIBBONPIG_DIE", ribbonpigDieTexture });
 
+	auto reimuEffect = make_shared<sf::Texture>();
+	reimuEffect->loadFromFile("Resource\\CHARACTER\\HAKUREI_REIMU\\EFFECT.png");
+	auto patchouliEffect = make_shared<sf::Texture>();
+	patchouliEffect->loadFromFile("Resource\\CHARACTER\\PATCHOULI_KNOWLEDGE\\EFFECT.png");
+
+	g_textures.insert({ "REIMU_EFFECT", reimuEffect });
+	g_textures.insert({ "PATCHOULI_EFFECT", patchouliEffect });
+
 	m_block = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
 	m_block->SetSpriteTexture(g_textures["MAP"], 0, 0, TILE_WIDTH, TILE_WIDTH);
 	m_nonblock = make_shared<Object>(sf::Vector2f{ 0, 0 }, sf::Vector2f{ 1.f, 1.f });
@@ -182,6 +190,13 @@ void MainScene::Update(float timeElapsed)
 	Recv();
 	if (m_avatar) m_avatar->Update(timeElapsed);
 	for (auto& player : m_players) player.second->Update(timeElapsed);
+	for (auto& effect : m_effects) effect->Update(timeElapsed);
+	for (auto& itr = m_effects.begin(); itr != m_effects.end(); ++itr) {
+		if ((*itr)->IsFinish()) {
+			m_effects.erase(itr);
+			break;
+		}
+	}
 
 	m_messageBox->Update(timeElapsed);
 
@@ -217,6 +232,7 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 	}
 	if (m_avatar) m_avatar->Render(window);
 	for (auto& player : m_players) player.second->Render(window);
+	for (auto& effect : m_effects) effect->Render(window);
 	
 	if (m_avatar) {
 		sf::Text text;
@@ -289,6 +305,7 @@ void MainScene::AddPlayer(int id, int serial, sf::Vector2f position, const char*
 		SetAnimationInfo(serial, m_avatar);
 		m_avatar->SetPosition(position);
 		m_avatar->SetName(name);
+		m_avatar->SetSerial(serial);
 		g_leftX = (int)position.x - 7; g_topY = (int)position.y - 7;
 	}
 	else {
@@ -359,12 +376,12 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 			sf::Vector2i{8, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Walk, AnimationSet{
-			g_textures["YOUMU_WALK"], sf::IntRect{0, 0, 100, 82},
-			sf::Vector2i{10, 1}, 0.1f, 0.f
+			g_textures["YOUMU_WALK"], sf::IntRect{0, 0, 112, 73},
+			sf::Vector2i{8, 1}, 0.1f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Attack, AnimationSet{
 			g_textures["YOUMU_ATTACK"], sf::IntRect{0, 0, 112, 124},
-			sf::Vector2i{11, 1}, 0.1f, 0.f
+			sf::Vector2i{11, 1}, 0.05f, 0.f
 			});
 		object->SetAnimationSet(AnimationState::Skill, AnimationSet{
 			g_textures["YOUMU_SKILL"], sf::IntRect{0, 0, 122, 84},
@@ -437,6 +454,18 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 		object->SetAnimationSet(AnimationState::Die, AnimationSet{
 			g_textures["RIBBONPIG_DIE"], sf::IntRect{0, 0, 73, 56},
 			sf::Vector2i{3, 1}, 0.2f, 0.f
+			});
+		break;
+	case Serial::Effect::REIMU_SKILL:
+		object->SetAnimationSet(AnimationState::Effect, AnimationSet{
+			g_textures["REIMU_EFFECT"], sf::IntRect{0, 0, 132, 138},
+			sf::Vector2i{8, 1}, 0.2f, 0.f
+			});
+		break;
+	case Serial::Effect::PATCHOULI_SKILL:
+		object->SetAnimationSet(AnimationState::Effect, AnimationSet{
+			g_textures["PATCHOULI_EFFECT"], sf::IntRect{0, 0, 186, 178},
+			sf::Vector2i{39, 1}, 0.05f, 0.f
 			});
 		break;
 	}
@@ -538,5 +567,18 @@ void MainScene::DeadObjectProcess(char* buf)
 	SetMessage(message.c_str());
 #ifdef NETWORK_DEBUG
 	cout << "SC_DEAD_OBJECT 수신" << endl;
+#endif
+}
+
+void MainScene::AddEffectProcess(char* buf)
+{
+	SC_ADD_EFFECT_PACKET* pk = reinterpret_cast<SC_ADD_EFFECT_PACKET*>(buf);
+
+	auto effect = make_shared<EffectObject>(sf::Vector2f{ (float)pk->coord.x, (float)pk->coord.y }, sf::Vector2f{ 1.f, 1.f });
+	SetAnimationInfo(pk->serial, effect);
+	m_effects.push_back(effect);
+
+#ifdef NETWORK_DEBUG
+	cout << "SC_ADD_EFFECT 수신" << endl;
 #endif
 }

@@ -20,6 +20,7 @@ void Player::Update(float timeElapsed)
 			m_chatStatus = false;
 		}
 	}
+	m_skillTime -= timeElapsed;
 }
 
 void Player::Render(const shared_ptr<sf::RenderWindow>& window)
@@ -59,18 +60,21 @@ void Player::OnProcessingKeyboardMessage(float timeElapsed)
 #endif
 		return;
 	}
-//	else if (GetAsyncKeyState(VK_MENU)) {
-//		SetState(AnimationState::Skill);
-//		CS_SKILL_PACKET packet;
-//		packet.size = sizeof(CS_ATTACK_PACKET);
-//		packet.type = CS_ATTACK;
-//		packet.direction = m_direction;
-//		Send(&packet);
-//#ifdef NETWORK_DEBUG
-//		cout << "CS_ATTACK 송신" << endl;
-//#endif
-//		return;
-//	}
+	else if (GetAsyncKeyState(VK_MENU) & 0x8000) {
+		if (m_skillTime <= 0) {
+			m_skillTime = m_skillCoolTime;
+			SetState(AnimationState::Skill);
+			CS_SKILL_PACKET packet;
+			packet.size = sizeof(CS_SKILL_PACKET);
+			packet.type = CS_SKILL;
+			packet.direction = m_direction;
+			Send(&packet);
+#ifdef NETWORK_DEBUG
+			cout << "CS_SKILL 송신" << endl;
+#endif
+		}
+		return;
+	}
 
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000 || GetAsyncKeyState(VK_RIGHT) & 0x8000 ||
 		GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState(VK_DOWN) & 0x8000) {
@@ -157,4 +161,20 @@ void Player::SetChat(const char* chat)
 	m_chat.setString(chat);
 	m_chat.setFillColor(sf::Color(0, 255, 255));
 	m_chat.setStyle(sf::Text::Bold);
+}
+
+void Player::SetSerial(const int serial)
+{
+	if (serial == Serial::Character::HAKUREI_REIMU) {
+		m_moveTime = StatusSetting::REIMU::MOVE_SPEED;
+		m_skillCoolTime = StatusSetting::REIMU::SKILL_COOLTIME;
+	}
+	if (serial == Serial::Character::KONPAKU_YOUMU) {
+		m_moveTime = StatusSetting::YOUMU::MOVE_SPEED;
+		m_skillCoolTime = StatusSetting::YOUMU::SKILL_COOLTIME;
+	}
+	if (serial == Serial::Character::PATCHOULI_KNOWLEDGE) {
+		m_moveTime = StatusSetting::PATCHOULI::MOVE_SPEED;
+		m_skillCoolTime = StatusSetting::PATCHOULI::SKILL_COOLTIME;
+	}
 }

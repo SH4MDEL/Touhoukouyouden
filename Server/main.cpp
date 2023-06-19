@@ -656,6 +656,15 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		g_gameServer.Attack(cid, pk->direction);
 		break;
 	}
+	case CS_SKILL:
+	{
+		CS_SKILL_PACKET* pk = reinterpret_cast<CS_SKILL_PACKET*>(packetBuf);
+#ifdef NETWORK_DEBUG
+		cout << "CS_SKILL 수신" << endl;
+#endif
+		g_gameServer.Skill(cid, pk->direction);
+		break;
+	}
 	case CS_SIGNUP:
 	{
 		// 새로 플레이어 생성

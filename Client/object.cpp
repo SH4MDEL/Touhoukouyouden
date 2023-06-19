@@ -171,3 +171,40 @@ void AnimationObject::SetDeadEvent(const function<void()>& deadEvent)
 {
 	m_deadEvent = deadEvent;
 }
+
+EffectObject::EffectObject(sf::Vector2f position, sf::Vector2f size) :
+	AnimationObject(position, size), m_finish{false}
+{
+	m_state = AnimationState::Effect;
+}
+
+EffectObject::~EffectObject()
+{
+}
+
+void EffectObject::Update(float timeElapsed)
+{
+	m_animationSet[m_state].m_animationTime += timeElapsed;
+	if (m_animationSet[m_state].m_animationTime >= m_animationSet[m_state].m_animationLifetime) {
+		m_animationSet[m_state].m_animationTime -= m_animationSet[m_state].m_animationLifetime;
+
+		// 세로 끝이면서 가로 끝이면 삭제
+		if (m_animationSet[m_state].m_spriteRect.top / m_animationSet[m_state].m_spriteRect.height + 1 == m_animationSet[m_state].m_spriteNum.y &&
+			m_animationSet[m_state].m_spriteRect.left / m_animationSet[m_state].m_spriteRect.width + 1 == m_animationSet[m_state].m_spriteNum.x) {
+			m_finish = true;
+			return;
+		}
+		// 가로 끝이면 세로 1 늘리고 가로 초기화한다.
+		else if (m_animationSet[m_state].m_spriteRect.left / m_animationSet[m_state].m_spriteRect.width + 1 == m_animationSet[m_state].m_spriteNum.x) {
+			m_animationSet[m_state].m_spriteRect.top += m_animationSet[m_state].m_spriteRect.height;
+			m_animationSet[m_state].m_spriteRect.left = 0;
+		}
+		// 아니면 가로 1 늘린다.
+		else {
+			m_animationSet[m_state].m_spriteRect.left += m_animationSet[m_state].m_spriteRect.width;
+		}
+
+		// 바뀐 정보를 반영한다.
+		m_animationSet[m_state].m_sprite.setTextureRect(m_animationSet[m_state].m_spriteRect);
+	}
+}
