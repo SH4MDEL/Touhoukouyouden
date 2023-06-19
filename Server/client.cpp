@@ -8,6 +8,7 @@ CLIENT::~CLIENT() { closesocket(m_socket); }
 void CLIENT::AutoHeal()
 {
 	if (m_hp >= m_maxHp) return;
+	if (m_state != OBJECT::LIVE) return;
 
 	m_hp += m_maxHp / 10;
 	if (m_hp > m_maxHp) m_hp = m_maxHp;

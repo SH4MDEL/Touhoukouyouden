@@ -13,7 +13,7 @@ constexpr int		ID_SIZE = 20;
 constexpr int		PASSWORD_SIZE = 20;
 
 constexpr int		MAX_USER = 20000;
-constexpr int		MAX_MONSTER = 200000;
+constexpr int		MAX_MONSTER = 2000;
 
 constexpr int		W_WIDTH = 2000;
 constexpr int		W_HEIGHT = 2000;

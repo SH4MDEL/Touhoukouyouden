@@ -204,7 +204,7 @@ void WorkerThread(HANDLE hiocp)
 		}
 		case TIMER_AUTOHEAL:
 		{
-			if (g_gameServer.GetClient(key)->m_state != OBJECT::INGAME) {
+			if (!(g_gameServer.GetClient(key)->m_state & OBJECT::INGAME)) {
 				delete expOverlapped;
 				break;
 			}
@@ -341,6 +341,9 @@ void WorkerThread(HANDLE hiocp)
 			UINT* cid = reinterpret_cast<UINT*>(expOverlapped->m_sendMsg);
 			DataBaseUserInfo* userinfo = 
 				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
+
+			Timer::GetInstance().AddTimerEvent(*cid, TimerEvent::AUTOHEAL,
+				chrono::system_clock::now() + 5s, 0, -1);
 
 			auto& client = g_gameServer.GetClient(*cid);
 			client->m_isStress = false;
@@ -488,6 +491,9 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 		g_gameServer.InputClient(cid,
 			Serial::Character::HAKUREI_REIMU, { rand() % W_WIDTH, rand() % W_HEIGHT },
 			20, 0, 987654321, 987654321);
+
+		Timer::GetInstance().AddTimerEvent(cid, TimerEvent::AUTOHEAL,
+			chrono::system_clock::now() + 5s, 0, -1);
 
 		auto& client = g_gameServer.GetClient(cid);
 		client->m_isStress = true;
