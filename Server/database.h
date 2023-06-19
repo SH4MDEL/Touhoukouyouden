@@ -41,7 +41,7 @@ private:
 	void ShowError(SQLHANDLE handle, SQLSMALLINT type, RETCODE retcode);
 
 private:
-	const wstring	DatabaseName = TEXT("GameServerExample");
+	const wstring	DatabaseName = TEXT("2018182025_GameServer");
 	concurrency::concurrent_unordered_map<int, string> m_id;
 
 	concurrency::concurrent_queue<DatabaseEvent> m_dbQueue;

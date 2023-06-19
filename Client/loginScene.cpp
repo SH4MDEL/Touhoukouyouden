@@ -3,7 +3,12 @@
 LoginScene::LoginScene()
 {
 	wcout.imbue(locale("korean"));
-	sf::Socket::Status status = g_socket.connect("127.0.0.1", PORT_NUM);
+
+	ifstream in{ "serverip.txt" };
+	string serverIP;
+	if (in) { while (in >> serverIP) {} }
+
+	sf::Socket::Status status = g_socket.connect(serverIP, PORT_NUM);
 	g_socket.setBlocking(false);
 
 	if (status != sf::Socket::Done) {
