@@ -49,7 +49,7 @@ void InitInstance()
 
 void Send(void* packetBuf)
 {
-    unsigned char* packet = reinterpret_cast<unsigned char*>(packetBuf);
+    unsigned short* packet = reinterpret_cast<unsigned short*>(packetBuf);
     size_t sent = 0;
     g_socket.send(packetBuf, packet[0], sent);
 }

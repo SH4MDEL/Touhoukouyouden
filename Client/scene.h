@@ -23,7 +23,7 @@ public:
 
 	void Recv();
 	void TranslatePacket(char* buf, size_t io_byte);
-	virtual void ProcessPacket(char* buf) = 0;
+	void ProcessPacket(char* buf);
 
 protected:
 	virtual void BuildObjects() = 0;

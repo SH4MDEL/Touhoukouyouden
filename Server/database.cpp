@@ -116,6 +116,8 @@ void Database::DatabaseThread(HANDLE hiocp)
 
 void Database::AddDatabaseEvent(const DatabaseEvent& userInfo)
 {
+    // 스트레스 테스트용 클라이언트면 저장 금지
+    if (g_gameServer.GetClient(userInfo.m_id)->m_isStress) return;
     m_dbQueue.push(userInfo);
 }
 
@@ -184,11 +186,11 @@ bool Database::UpdateUserData(UINT uid, INT x, INT y)
 {
     // id가 존재하지 않으면 저장 실패
     if (!m_id.count(uid)) return false;
-    
+
     handleLock.lock();
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
-    auto& client = g_gameServer.GetClient(uid);
+       auto& client = g_gameServer.GetClient(uid);
 
     SQLWCHAR wstr[100];
     memset(wstr, 0, sizeof(wstr));

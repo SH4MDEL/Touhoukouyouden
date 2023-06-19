@@ -250,7 +250,10 @@ void WorkerThread(HANDLE hiocp)
 		case TIMER_CLIENT_RESURRECTION:
 		{
 			auto& client = g_gameServer.GetClient(key);
-			client->m_state = OBJECT::LIVE;
+			{
+				unique_lock<mutex> lock(client->m_mutex);
+				client->m_state = OBJECT::LIVE;
+			}
 
 			g_gameServer.Teleport(key, Short2{1000, 1000});
 
@@ -321,8 +324,10 @@ void WorkerThread(HANDLE hiocp)
 		case TIMER_NPC_RESURRECTION:
 		{
 			auto& monster = g_gameServer.GetNPC(key);
-			monster->m_state = OBJECT::LIVE;
-
+			{
+				unique_lock<mutex> lock(monster->m_mutex);
+				monster->m_state = OBJECT::LIVE;
+			}
 			Timer::GetInstance().AddTimerEvent(key, TimerEvent::ATTACK,
 				chrono::system_clock::now() + 1s, 0, -1);
 
@@ -338,6 +343,7 @@ void WorkerThread(HANDLE hiocp)
 				reinterpret_cast<DataBaseUserInfo*>(expOverlapped->m_sendMsg + sizeof(UINT));
 
 			auto& client = g_gameServer.GetClient(*cid);
+			client->m_isStress = false;
 			{
 				SC_LOGIN_OK_PACKET sendpk;
 				sendpk.size = sizeof(SC_LOGIN_OK_PACKET);
@@ -472,6 +478,84 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 			(UINT)cid, DatabaseEvent::Type::LOGIN,
 			DataBaseUserInfo { pk->id, pk->password, -1, -1 }
 			});
+		break;
+	}
+	case CS_STRESS_LOGIN:
+	{
+		// 스트레스 테스트 용 특수 패킷
+		CS_STRESS_LOGIN_PACKET* pk = reinterpret_cast<CS_STRESS_LOGIN_PACKET*>(packetBuf);
+
+		g_gameServer.InputClient(cid,
+			Serial::Character::HAKUREI_REIMU, { rand() % W_WIDTH, rand() % W_HEIGHT },
+			20, 0, 987654321, 987654321);
+
+		auto& client = g_gameServer.GetClient(cid);
+		client->m_isStress = true;
+		{
+			SC_LOGIN_OK_PACKET sendpk;
+			sendpk.size = sizeof(SC_LOGIN_OK_PACKET);
+			sendpk.type = SC_LOGIN_OK;
+			client->DoSend(&sendpk);
+			strcpy_s(client->m_name, pk->name);
+#ifdef NETWORK_DEBUG
+			cout << "SC_LOGIN_OK 송신" << endl;
+#endif
+			{
+				unique_lock<mutex> lock(client->m_mutex);
+				client->m_state = OBJECT::LIVE;
+			}
+		}
+		{
+			SC_LOGIN_INFO_PACKET sendpk;
+			sendpk.size = sizeof(SC_LOGIN_INFO_PACKET);
+			sendpk.type = SC_LOGIN_INFO;
+			sendpk.id = cid;
+			sendpk.hp = client->m_hp;
+			sendpk.max_hp = client->m_maxHp;
+			sendpk.exp = client->m_exp;
+			sendpk.level = client->m_level;
+			client->DoSend(&sendpk);
+#ifdef NETWORK_DEBUG
+			cout << "SC_LOGIN_INFO 송신" << endl;
+#endif
+		}
+
+		// 섹터 안에 있는 오브젝트의 ID를 담음.
+		unordered_set<int> newViewList;
+		short sectorX = client->m_position.x / (VIEW_RANGE * 2);
+		short sectorY = client->m_position.y / (VIEW_RANGE * 2);
+		const array<INT, 9> dx = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+		const array<INT, 9> dy = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+		// 주변 9개의 섹터 전부 조사
+		for (int i = 0; i < 9; ++i) {
+			if (sectorX + dx[i] >= W_WIDTH / (VIEW_RANGE * 2) || sectorX + dx[i] < 0 ||
+				sectorY + dy[i] >= W_HEIGHT / (VIEW_RANGE * 2) || sectorY + dy[i] < 0) {
+				continue;
+			}
+
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].lock();
+			for (auto& id : g_sector[sectorY + dy[i]][sectorX + dx[i]]) {
+				{
+					if (id < MAX_USER) {
+						unique_lock<mutex> lock(g_gameServer.GetClient(id)->m_mutex);
+						if (!(g_gameServer.GetClient(id)->m_state & OBJECT::INGAME)) continue;
+					}
+					else {
+						unique_lock<mutex> lock(g_gameServer.GetNPC(id)->m_mutex);
+						if (!(g_gameServer.GetNPC(id)->m_state & OBJECT::LIVE)) continue;
+					}
+				}
+				if (!g_gameServer.CanSee(cid, id)) continue;
+
+				// 일단 나한테 전송
+				client->SendAddPlayer(id);
+				// 상대는 NPC가 아닐 경우 전송
+				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
+				else if (g_gameServer.CanSee(id, cid)) g_gameServer.WakeupNPC(id, cid);
+			}
+			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();
+		}
+
 		break;
 	}
 	case CS_MOVE:

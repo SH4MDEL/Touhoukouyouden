@@ -39,5 +39,7 @@ public:
 	int m_bonusAtk;
 	int m_baseSkill;
 	int m_bonusSkill;
+
+	atomic_bool m_isStress;
 };
 

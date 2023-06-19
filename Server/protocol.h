@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <utility>
 
-#define NETWORK_DEBUG
+//#define NETWORK_DEBUG
 
 constexpr int		PORT_NUM = 4000;
 constexpr int		NAME_SIZE = 20;
@@ -13,7 +13,7 @@ constexpr int		ID_SIZE = 20;
 constexpr int		PASSWORD_SIZE = 20;
 
 constexpr int		MAX_USER = 20000;
-constexpr int		MAX_MONSTER = 20000;
+constexpr int		MAX_MONSTER = 200000;
 
 constexpr int		W_WIDTH = 2000;
 constexpr int		W_HEIGHT = 2000;
@@ -26,6 +26,7 @@ constexpr char		CS_ATTACK = 3;
 constexpr char		CS_TELEPORT = 4; // RANDOM한 위치로 Teleport, Stress Test할 때 Hot Spot현상을 피하기 위해 구현
 constexpr char		CS_LOGOUT = 5;
 constexpr char		CS_SIGNUP = 6;
+constexpr char		CS_STRESS_LOGIN = 7;
 
 constexpr char		SC_LOGIN_INFO = 2;
 constexpr char		SC_ADD_OBJECT = 3;
@@ -223,6 +224,13 @@ struct CS_SIGNUP_PACKET
 	char id[ID_SIZE];
 	char password[PASSWORD_SIZE];
 	unsigned char serial;
+};
+
+struct CS_STRESS_LOGIN_PACKET
+{
+	unsigned short size;
+	char type;
+	char name[ID_SIZE];
 };
 
 /*

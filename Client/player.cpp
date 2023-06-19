@@ -59,6 +59,18 @@ void Player::OnProcessingKeyboardMessage(float timeElapsed)
 #endif
 		return;
 	}
+//	else if (GetAsyncKeyState(VK_MENU)) {
+//		SetState(AnimationState::Skill);
+//		CS_SKILL_PACKET packet;
+//		packet.size = sizeof(CS_ATTACK_PACKET);
+//		packet.type = CS_ATTACK;
+//		packet.direction = m_direction;
+//		Send(&packet);
+//#ifdef NETWORK_DEBUG
+//		cout << "CS_ATTACK ¼Û½Å" << endl;
+//#endif
+//		return;
+//	}
 
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000 || GetAsyncKeyState(VK_RIGHT) & 0x8000 ||
 		GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState(VK_DOWN) & 0x8000) {

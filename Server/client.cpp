@@ -1,6 +1,6 @@
 #include "client.h"
 
-CLIENT::CLIENT() : OBJECT(), m_socket{0}
+CLIENT::CLIENT() : OBJECT(), m_socket{0}, m_isStress{false}
 {}
 
 CLIENT::~CLIENT() { closesocket(m_socket); }
@@ -69,7 +69,10 @@ void CLIENT::Dead(UINT attacker)
 {
 	// 죽어서 LIVE -> DEAD 상태가 되면 시야 처리시 생략한다.
 	// 따라서 섹터에서 제외해줄 필요는 없다.
-	m_state = OBJECT::DEAD;
+	{
+		unique_lock<mutex> lock(m_mutex);
+		m_state = OBJECT::DEAD;
+	}
 	m_hp = m_maxHp;
 	m_exp /= 2;
 	SendStatChange();

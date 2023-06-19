@@ -60,6 +60,7 @@ void LoginScene::BuildObjects()
 	m_loginUI->SetTextColor(sf::Color(255, 255, 255));
 	m_loginUI->SetTextSize(25);
 	m_loginUI->SetClickEvent([&]() {
+		cout << "asdf" << endl;
 		CS_LOGIN_PACKET packet;
 		packet.size = sizeof(CS_LOGIN_PACKET);
 		packet.type = CS_LOGIN;
@@ -246,45 +247,37 @@ void LoginScene::OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr
 	m_noticeBox->OnProcessingMouseMessage(inputEvent, window);
 }
 
-void LoginScene::ProcessPacket(char* buf)
+void LoginScene::LoginOkProcess(char* buf)
 {
-	switch (buf[2])
-	{
-	case SC_LOGIN_OK:
-	{
 #ifdef NETWORK_DEBUG
-		cout << "SC_LOGIN_OK 수신" << endl;
+	cout << "SC_LOGIN_OK 수신" << endl;
 #endif
-		g_gameFramework.ChangeScene(Tag::Main);
-		break;
-	}
-	case SC_LOGIN_FAIL:
-	{
-		m_noticeBox->SetText("Login Fail..");
-		m_noticeBox->SetEnable();
-		// 로그인 실패했으니까 다시 하라는 메시지 출력
+	g_gameFramework.ChangeScene(Tag::Main);
+}
+
+void LoginScene::LoginFailProcess(char* buf)
+{
+	m_noticeBox->SetText("Login Fail..");
+	m_noticeBox->SetEnable();
 #ifdef NETWORK_DEBUG
-		cout << "SC_LOGIN_FAIL 수신" << endl;
+	cout << "SC_LOGIN_FAIL 수신" << endl;
 #endif
-		break;
-	}
-	case SC_SIGNUP_OK:
-	{
-		m_noticeBox->SetText("New Character Created!!");
-		m_noticeBox->SetEnable();
+}
+
+void LoginScene::SignupOkProcess(char* buf)
+{
+	m_noticeBox->SetText("New Character Created!!");
+	m_noticeBox->SetEnable();
 #ifdef NETWORK_DEBUG
-		cout << "SC_SIGNUP_OK 수신" << endl;
+	cout << "SC_SIGNUP_OK 수신" << endl;
 #endif
-		break;
-	}
-	case SC_SIGNUP_FAIL:
-	{
-		m_noticeBox->SetText("Sign Up Fail..");
-		m_noticeBox->SetEnable();
+}
+
+void LoginScene::SignupFailProcess(char* buf)
+{
+	m_noticeBox->SetText("Sign Up Fail..");
+	m_noticeBox->SetEnable();
 #ifdef NETWORK_DEBUG
-		cout << "SC_SIGNUP_FAIL 수신" << endl;
+	cout << "SC_SIGNUP_FAIL 수신" << endl;
 #endif
-		break;
-	}
-	}
 }

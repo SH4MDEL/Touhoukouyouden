@@ -58,7 +58,10 @@ void GameServer::InitializeMonster()
 		npc->m_moveType = setting.moveType;
 		npc->m_waitType = setting.waitType;
 
-		npc->m_state = OBJECT::LIVE;
+		{
+			unique_lock<mutex> lock(npc->m_mutex);
+			npc->m_state = OBJECT::LIVE;
+		}
 
 		// 싱글쓰레드에서 초기화하므로 락을 걸 필요가 없다.
 		g_sector[npc->m_position.y / (VIEW_RANGE * 2)][npc->m_position.x / (VIEW_RANGE * 2)].insert(npc->m_id);
@@ -184,7 +187,7 @@ void GameServer::Move(UINT id, UCHAR direction)
 	auto dx = Move::dx[direction];
 	auto dy = Move::dy[direction];
 	Short2 to = { from.x + (SHORT)dx , from.y + (SHORT)dy};
-	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
+	if (to.x >= W_WIDTH || to.x < 0 || to.y >= W_HEIGHT || to.y < 0) {
 		return;
 	}
 	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;
@@ -353,7 +356,7 @@ void GameServer::RoamingNPC(UINT id)
 	}
 	
 	Short2 to = { from + d };
-	if (to.x > W_WIDTH || to.x < 0 || to.y > W_HEIGHT || to.y < 0) {
+	if (to.x >= W_WIDTH || to.x < 0 || to.y >= W_HEIGHT || to.y < 0) {
 		return;
 	}
 	if (m_map[to.y][to.x] & TileInfo::BLOCKING) return;

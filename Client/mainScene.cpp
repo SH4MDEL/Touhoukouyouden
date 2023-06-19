@@ -244,6 +244,7 @@ void MainScene::Move(INT id, sf::Vector2f position)
 		g_leftX = position.x - 7; g_topY = position.y - 7;
 	}
 	else {
+		if (m_avatar->GetState() == AnimationState::Die) m_avatar->SetState(AnimationState::Idle);
 		m_players[id]->SetPosition(position);
 	}
 }
@@ -373,104 +374,97 @@ void MainScene::SetAnimationInfo(int characterInfo, const shared_ptr<AnimationOb
 	}
 }
 
-void MainScene::ProcessPacket(char* buf)
+void MainScene::LoginInfoProcess(char* buf)
 {
-	switch (buf[2])
-	{
-	case SC_LOGIN_INFO:
-	{
-		SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
-		g_clientID = pk->id;
-		string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
-		m_hpUI->SetText(hp.c_str());
-		string level = "Level : " + to_string(pk->level);
-		m_levelUI->SetText(level.c_str());
-		string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
-		m_expUI->SetText(exp.c_str());
+	SC_LOGIN_INFO_PACKET* pk = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buf);
+	g_clientID = pk->id;
+	string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
+	m_hpUI->SetText(hp.c_str());
+	string level = "Level : " + to_string(pk->level);
+	m_levelUI->SetText(level.c_str());
+	string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
+	m_expUI->SetText(exp.c_str());
 #ifdef NETWORK_DEBUG
-		cout << "SC_LOGIN_INFO 수신" << endl;
+	cout << "SC_LOGIN_INFO 수신" << endl;
 #endif
-		break;
-	}
-	case SC_ADD_OBJECT:
-	{
-		SC_ADD_OBJECT_PACKET* pk = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(buf);
-		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y};
-		AddPlayer(pk->id, pk->serial, pos, pk->name);
+}
+
+void MainScene::AddObjectProcess(char* buf)
+{
+	SC_ADD_OBJECT_PACKET* pk = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(buf);
+	sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y };
+	AddPlayer(pk->id, pk->serial, pos, pk->name);
 #ifdef NETWORK_DEBUG
-		cout << "SC_ADD_OBJECT 수신, serial : " << pk->serial << endl;
+	cout << "SC_ADD_OBJECT 수신, serial : " << pk->serial << endl;
 #endif
-		break;
-	}
-	case SC_REMOVE_OBJECT:
-	{
-		SC_REMOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(buf);
-		ExitPlayer(pk->id);
+}
+
+void MainScene::RemoveObjectProcess(char* buf)
+{
+	SC_REMOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(buf);
+	ExitPlayer(pk->id);
 #ifdef NETWORK_DEBUG
-		cout << "SC_REMOVE_OBJECT 수신" << endl;
+	cout << "SC_REMOVE_OBJECT 수신" << endl;
 #endif
-		break;
-	}
-	case SC_MOVE_OBJECT:
-	{
-		SC_MOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_MOVE_OBJECT_PACKET*>(buf);
-		sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y };
-		Move(pk->id, pos);
+}
+
+void MainScene::MoveObjectProcess(char* buf)
+{
+	SC_MOVE_OBJECT_PACKET* pk = reinterpret_cast<SC_MOVE_OBJECT_PACKET*>(buf);
+	sf::Vector2f pos = { (float)pk->coord.x, (float)pk->coord.y };
+	Move(pk->id, pos);
 #ifdef NETWORK_DEBUG
-		cout << "SC_MOVE_OBJECT 수신" << endl;
+	cout << "SC_MOVE_OBJECT 수신" << endl;
 #endif
-		break;
-	}
-	case SC_CHAT:
-	{
-		SC_CHAT_PACKET* pk = reinterpret_cast<SC_CHAT_PACKET*>(buf);
-		SetChat(pk->id, pk->message);
+}
+
+void MainScene::ChatProcess(char* buf)
+{
+	SC_CHAT_PACKET* pk = reinterpret_cast<SC_CHAT_PACKET*>(buf);
+	SetChat(pk->id, pk->message);
 #ifdef NETWORK_DEBUG
-		cout << "SC_CHAT 수신" << endl;
+	cout << "SC_CHAT 수신" << endl;
 #endif
-		break;
-	}
-	case SC_STAT_CHANGE:
-	{
-		SC_STAT_CHANGE_PACKET* pk = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(buf);
-		string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
-		m_hpUI->SetText(hp.c_str());
-		string level = "Level : " + to_string(pk->level);
-		m_levelUI->SetText(level.c_str());
-		string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
-		m_expUI->SetText(exp.c_str());
+}
+
+void MainScene::StatChangeProcess(char* buf)
+{
+	SC_STAT_CHANGE_PACKET* pk = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(buf);
+	string hp = "HP : " + to_string(pk->hp) + " / " + to_string(pk->max_hp);
+	m_hpUI->SetText(hp.c_str());
+	string level = "Level : " + to_string(pk->level);
+	m_levelUI->SetText(level.c_str());
+	string exp = "EXP : " + to_string(pk->exp) + " / " + to_string((int)pow(2, pk->level - 1) * 100);
+	m_expUI->SetText(exp.c_str());
 #ifdef NETWORK_DEBUG
-		cout << "SC_STAT_CHANGE 수신" << endl;
+	cout << "SC_STAT_CHANGE 수신" << endl;
 #endif
-		break;
-	}
-	case SC_CHANGE_HP:
-	{
-		SC_CHANGE_HP_PACKET* pk = reinterpret_cast<SC_CHANGE_HP_PACKET*>(buf);
+}
+
+void MainScene::ChangeHpProcess(char* buf)
+{
+	SC_CHANGE_HP_PACKET* pk = reinterpret_cast<SC_CHANGE_HP_PACKET*>(buf);
 
 #ifdef NETWORK_DEBUG
-		cout << "SC_CHANGE_HP 수신" << endl;
+	cout << "SC_CHANGE_HP 수신" << endl;
 #endif
-		break;
-	}
-	case SC_DEAD_OBJECT:
-	{
-		SC_DEAD_OBJECT_PACKET* pk = reinterpret_cast<SC_DEAD_OBJECT_PACKET*>(buf);
-		int id = pk->id;
-		if (id == g_clientID) m_avatar->SetState(AnimationState::Die);
-		else {
-			m_players[id]->SetState(AnimationState::Die);
-			if (id >= MAX_USER) {
-				m_players[id]->SetDeadEvent([&]() {
-					ExitPlayer(id);
-					});
-			}
+}
 
+void MainScene::DeadObjectProcess(char* buf)
+{
+	SC_DEAD_OBJECT_PACKET* pk = reinterpret_cast<SC_DEAD_OBJECT_PACKET*>(buf);
+	int id = pk->id;
+	if (id == g_clientID) m_avatar->SetState(AnimationState::Die);
+	else {
+		m_players[id]->SetState(AnimationState::Die);
+		if (id >= MAX_USER) {
+			m_players[id]->SetDeadEvent([&]() {
+				ExitPlayer(id);
+				});
 		}
+
+	}
 #ifdef NETWORK_DEBUG
-		cout << "SC_DEAD_OBJECT 수신" << endl;
+	cout << "SC_DEAD_OBJECT 수신" << endl;
 #endif
-		break;
-	}
-	}
 }

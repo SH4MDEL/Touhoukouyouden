@@ -15,7 +15,10 @@ public:
 	void OnProcessingInputTextMessage(sf::Event inputEvent) final;
 	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
 
-	void ProcessPacket(char* buf) final;
+	void LoginOkProcess(char* buf);
+	void LoginFailProcess(char* buf);
+	void SignupOkProcess(char* buf);
+	void SignupFailProcess(char* buf);
 
 private:
 	virtual void BuildObjects() final;

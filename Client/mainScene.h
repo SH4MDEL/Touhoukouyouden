@@ -17,14 +17,21 @@ public:
 	void OnProcessingInputTextMessage(sf::Event inputEvent) final;
 	void OnProcessingMouseMessage(sf::Event inputEvent, const shared_ptr<sf::RenderWindow>& window) final;
 
-	void ProcessPacket(char* buf) final;
-
 	void AddPlayer(int id, int serial, sf::Vector2f position, const char* name);
 	void ExitPlayer(int id);
 
 	void Move(INT id, sf::Vector2f position);
 	void SetChat(INT id, const char* chat);
 	void SetAnimationInfo(int characterInfo, const shared_ptr<AnimationObject>& object);
+
+	void LoginInfoProcess(char* buf);
+	void AddObjectProcess(char* buf);
+	void RemoveObjectProcess(char* buf);
+	void MoveObjectProcess(char* buf);
+	void ChatProcess(char* buf);
+	void StatChangeProcess(char* buf);
+	void ChangeHpProcess(char* buf);
+	void DeadObjectProcess(char* buf);
 
 private:
 	virtual void BuildObjects() final;
