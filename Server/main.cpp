@@ -557,6 +557,7 @@ void ProcessPacket(UINT cid, CHAR* packetBuf)
 				client->SendAddPlayer(id);
 				// 상대는 NPC가 아닐 경우 전송
 				if (id < MAX_USER) g_gameServer.GetClient(id)->SendAddPlayer(cid);
+				// NPC일 경우 깨움
 				else if (g_gameServer.CanSee(id, cid)) g_gameServer.WakeupNPC(id, cid);
 			}
 			g_sectorLock[sectorY + dy[i]][sectorX + dx[i]].unlock();

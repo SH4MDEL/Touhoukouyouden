@@ -238,8 +238,8 @@ void MainScene::Render(const shared_ptr<sf::RenderWindow>& window)
 		sf::Text text;
 		text.setFont(g_font);
 		char buf[100];
-		sprintf_s(buf, "(%d, %d)", (int)m_avatar->GetPosition().x, (int)m_avatar->GetPosition().y);
-		text.setFillColor(sf::Color::Yellow);
+		sprintf_s(buf, "Position : (%d, %d)", (int)m_avatar->GetPosition().x + 10, (int)m_avatar->GetPosition().y + 10);
+		text.setFillColor(sf::Color::Black);
 		text.setString(buf);
 		g_window->draw(text);
 	}

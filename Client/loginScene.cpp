@@ -65,7 +65,6 @@ void LoginScene::BuildObjects()
 	m_loginUI->SetTextColor(sf::Color(255, 255, 255));
 	m_loginUI->SetTextSize(25);
 	m_loginUI->SetClickEvent([&]() {
-		cout << "asdf" << endl;
 		CS_LOGIN_PACKET packet;
 		packet.size = sizeof(CS_LOGIN_PACKET);
 		packet.type = CS_LOGIN;

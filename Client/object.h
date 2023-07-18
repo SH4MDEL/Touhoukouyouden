@@ -77,6 +77,9 @@ protected:
 	AnimationState								m_prevState;
 
 	function<void()>		m_deadEvent;
+
+	// 이미지의 틀어짐 보정
+	//sf::Vector2f m_imageOffset;
 };
 
 class EffectObject : public AnimationObject

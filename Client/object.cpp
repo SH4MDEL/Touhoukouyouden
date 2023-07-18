@@ -119,9 +119,12 @@ void AnimationObject::Update(float timeElapsed)
 void AnimationObject::Render(const shared_ptr<sf::RenderWindow>& window)
 {
 	float rx = (m_position.x - g_leftX) * TILE_WIDTH;
-	float ry = (m_position.y - g_topY) * TILE_WIDTH - (float)m_animationSet[m_state].m_spriteRect.height / 2.f;
-	if (m_flipped) rx += (float)m_animationSet[m_state].m_spriteRect.width / 2.f;
-	m_animationSet[m_state].m_sprite.setPosition(rx, ry);
+	float ry = (m_position.y - g_topY) * TILE_WIDTH;
+
+	auto size = m_animationSet[m_state].m_sprite.getGlobalBounds();
+	if (m_flipped) rx += (float)m_animationSet[m_state].m_spriteRect.width;
+	m_animationSet[m_state].m_sprite.setPosition(rx + 32 - size.width / 2, ry + 10 - size.height / 2);
+
 	window->draw(m_animationSet[m_state].m_sprite);
 }
 

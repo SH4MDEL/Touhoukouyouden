@@ -123,9 +123,6 @@ void Database::AddDatabaseEvent(const DatabaseEvent& userInfo)
 
 bool Database::Login(UINT uid, const char* id, const char* password)
 {
-    // 해당 ID가 이미 접속중인 경우 로그인 실패
-    if (m_id.count(uid)) return false;
-
     handleLock.lock();
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 

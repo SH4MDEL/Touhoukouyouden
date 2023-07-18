@@ -202,6 +202,7 @@ void InputTextBoxUI::Render(const shared_ptr<sf::RenderWindow>& window)
 
 	window->draw(m_sprite);
 	// 위치 지정
+
 	m_text.setFont(m_textFont);
 	window->draw(m_text);
 }

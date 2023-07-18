@@ -40,7 +40,7 @@ int main()
 
 void InitInstance()
 {
-    if (!g_font.loadFromFile("Resource\\cour.ttf")) {
+    if (!g_font.loadFromFile("Resource\\NEXONLv1GothicLight.ttf")) {
         cout << "Font Loading Error!\n";
         exit(-1);
     }

@@ -203,6 +203,7 @@ void GameServer::Move(UINT id, UCHAR direction)
 			auto index = pq.top(); pq.pop();
 			g_sectorLock[index.y / (VIEW_RANGE * 2)][index.x / (VIEW_RANGE * 2)].lock();
 		}
+
 		// 이전 섹터에서 오브젝트의 ID를 삭제한다.
 		g_sector[from.y / (VIEW_RANGE * 2)][from.x / (VIEW_RANGE * 2)].erase(id);
 		// 새로운 섹터에 오브젝트의 ID를 삽입한다.
